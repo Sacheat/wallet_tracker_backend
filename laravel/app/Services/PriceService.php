@@ -12,11 +12,10 @@ class PriceService
             try {
                 $response = Http::get('https://api.frankfurter.dev/v2/rates', [
                     'base' => 'USD',
-                    'symbols' => 'EUR',
                 ]);
 
                 $response->throw();
-                $rate = $response->json()['rates']['EUR'];
+                $rate = collect($response->json())->firstWhere('quote', 'EUR')['rate'];
                 Cache::forever('usd_eur_rate_backup', $rate);
                 return $rate;
 
