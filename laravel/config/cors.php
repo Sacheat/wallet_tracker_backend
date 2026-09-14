@@ -15,7 +15,9 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // register/login/logout/user live outside /api (routes/web.php, session-based
+    // auth) but still need CORS since the frontend calls them cross-origin.
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'register', 'login', 'logout', 'user'],
 
     'allowed_methods' => ['*'],
 
