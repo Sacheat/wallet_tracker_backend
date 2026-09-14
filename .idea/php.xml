@@ -128,9 +128,13 @@
       <path value="$PROJECT_DIR$/laravel/vendor/graham-campbell/result-type" />
       <path value="$PROJECT_DIR$/laravel/vendor/composer" />
       <path value="$PROJECT_DIR$/laravel/vendor/laravel/sanctum" />
+      <path value="$PROJECT_DIR$/laravel/vendor/symfony/yaml" />
+      <path value="$PROJECT_DIR$/laravel/vendor/laravel/roster" />
+      <path value="$PROJECT_DIR$/laravel/vendor/laravel/boost" />
+      <path value="$PROJECT_DIR$/laravel/vendor/laravel/mcp" />
     </include_path>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.5">
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.3">
     <option name="suggestChangeDefaultLanguageLevel" value="false" />
   </component>
   <component name="PhpStanOptionsConfiguration">

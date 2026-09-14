@@ -4,22 +4,22 @@ namespace App\Services;
 
 use App\DTO\PortfolioSummary;
 use App\Models\PortfolioEntry;
+use App\Models\User;
 
 class PortfolioService
 {
-    public function __construct(private PriceService $priceService)
-    {
-    }
+    public function __construct(private PriceService $priceService) {}
 
-    public function getPortfolioSummary(): PortfolioSummary
+    public function getPortfolioSummary(User $user): PortfolioSummary
     {
-        $entries = PortfolioEntry::with(['crypto', 'platform'])->get();
-        $coingeckoIds = $entries->pluck('crypto.coingecko_id')->unique()->values()->toArray();
-        $prices = $this->priceService->getCryptoUsdPrice($coingeckoIds);
+        $entries = PortfolioEntry::with(['asset', 'platform'])
+            ->where('user_id', $user->id)
+            ->get();
+        $prices = $this->priceService->getUsdPrices($entries->pluck('asset'));
         $eurRate = $this->priceService->getUsdToEurRate();
 
         $enrichedEntries = $entries->map(function (PortfolioEntry $entry) use ($prices, $eurRate) {
-            $priceUsd = $prices[$entry->crypto->coingecko_id]['usd'] ?? 0;
+            $priceUsd = $prices[$entry->asset->external_id] ?? 0;
             $valueUsd = $entry->quantity * $priceUsd;
             $valueEur = $valueUsd * $eurRate;
 

@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Enums\AssetType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateCryptoRequest extends FormRequest
+class UpdateAssetRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -20,8 +20,9 @@ class UpdateCryptoRequest extends FormRequest
     {
         return [
             'name' => 'sometimes|string|max:255',
-            'symbol' => ['sometimes', 'string', 'max:10', Rule::unique('cryptos', 'symbol')->ignore($this->route('crypto'))],
-            'coingecko_id' => ['sometimes', 'string', 'max:255', Rule::unique('cryptos', 'coingecko_id')->ignore($this->route('crypto'))],
+            'symbol' => ['sometimes', 'string', 'max:10', Rule::unique('assets', 'symbol')->ignore($this->route('asset'))],
+            'type' => ['sometimes', Rule::enum(AssetType::class)],
+            'external_id' => ['nullable', 'string', 'max:255', Rule::unique('assets', 'external_id')->ignore($this->route('asset'))],
             'logo_url' => 'nullable|url',
         ];
     }

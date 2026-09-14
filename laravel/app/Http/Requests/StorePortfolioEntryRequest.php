@@ -19,10 +19,12 @@ class StorePortfolioEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'crypto_id' => 'required|integer|exists:cryptos,id',
+            'asset_id' => 'required|integer|exists:assets,id',
             'platform_id' => [
                 'required', 'integer', 'exists:platforms,id',
-                Rule::unique('portfolio_entries')->where('crypto_id', $this->input('crypto_id')),
+                Rule::unique('portfolio_entries')
+                    ->where('user_id', $this->user()->id)
+                    ->where('asset_id', $this->input('asset_id')),
             ],
             'quantity' => 'required|numeric|gt:0',
         ];

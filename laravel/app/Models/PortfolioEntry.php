@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PortfolioEntry extends Model
 {
+    use Auditable;
+
     protected $fillable = [
-        'crypto_id',
+        'user_id',
+        'asset_id',
         'platform_id',
         'quantity',
     ];
@@ -17,9 +21,14 @@ class PortfolioEntry extends Model
         'quantity' => 'decimal:8',
     ];
 
-    public function crypto(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Crypto::class);
+        return $this->belongsTo(User::class);
+    }
+
+    public function asset(): BelongsTo
+    {
+        return $this->belongsTo(Asset::class);
     }
 
     public function platform(): BelongsTo

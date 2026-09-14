@@ -15,7 +15,8 @@ class PortfolioEntryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'crypto' => $this->crypto->name,
+            'asset' => $this->asset->name,
+            'asset_type' => $this->asset->type->value,
             'platform' => $this->platform->name,
             'quantity' => $this->quantity,
             'value_usd' => $this->value_usd,

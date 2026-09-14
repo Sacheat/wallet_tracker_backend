@@ -117,6 +117,10 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/tijsverkoyen/css-to-inline-styles" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/vlucas/phpdotenv" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/voku/portable-ascii" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel/boost" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel/mcp" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel/roster" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/symfony/yaml" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
