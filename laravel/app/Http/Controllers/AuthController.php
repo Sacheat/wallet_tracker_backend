@@ -28,7 +28,11 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        if (! Auth::attempt($request->validated())) {
+        // 'remember' isn't a users column: Auth::attempt() would otherwise
+        // try to filter WHERE remember = ? alongside email/password.
+        $credentials = $request->safe()->only(['email', 'password']);
+
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'email' => ['Ces identifiants ne correspondent à aucun compte.'],
             ]);
