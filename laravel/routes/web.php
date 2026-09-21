@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvatarController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,8 @@ Route::post('/register', [AuthController::class, 'register']);
 // (before deciding whether to actually respond with a redirect or JSON), so it
 // must resolve to something or every 401 crashes into a 500.
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
+Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
