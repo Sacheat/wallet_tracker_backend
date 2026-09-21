@@ -21,4 +21,5 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user', [ProfileController::class, 'update']);
+    Route::patch('/user/password', [ProfileController::class, 'updatePassword']);
 });
