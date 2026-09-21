@@ -13,14 +13,17 @@ Route::get('/', function () {
 
 // Session-based auth for the SPA (Sanctum stateful): CSRF-protected via the
 // 'web' middleware group, the frontend must call GET /sanctum/csrf-cookie first.
-Route::post('/register', [AuthController::class, 'register']);
+// 'throttle:auth' (AppServiceProvider, 5/min/IP): these 4 are public and
+// unauthenticated, so nothing else caps login brute-force or registration/
+// reset-email spam — they sit outside the 'api' limiter (routes/api.php only).
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth');
 // Named 'login': Laravel's default guest-redirect middleware calls route('login')
 // to build the AuthenticationException's redirect target even for API requests
 // (before deciding whether to actually respond with a redirect or JSON), so it
 // must resolve to something or every 401 crashes into a 500.
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
-Route::post('/reset-password', [PasswordResetController::class, 'reset']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth')->name('login');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:auth');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:auth');
 
 // Signed link from the verification email — the browser navigates here
 // directly (not an XHR call), so it needs 'auth' (session cookie) rather

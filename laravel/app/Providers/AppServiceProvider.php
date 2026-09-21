@@ -27,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // /login, /register, /forgot-password, /reset-password: public,
+        // unauthenticated, and outside the 'api' limiter above (routes/web.php,
+        // not routes/api.php) — without this, nothing capped login brute-force
+        // attempts or spammed registrations (each one also triggers a real
+        // Resend email, so it's a quota-exhaustion vector too).
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
         // Laravel's default reset-link points at this backend, which has no
         // password-reset page — the SPA does. First entry of FRONTEND_URLS
         // (same env var CORS already reads) is the frontend's own origin.
