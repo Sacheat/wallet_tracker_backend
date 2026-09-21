@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvatarController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,19 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
 Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 
+// Signed link from the verification email — the browser navigates here
+// directly (not an XHR call), so it needs 'auth' (session cookie) rather
+// than the JSON-oriented routes below, and 'signed' validates id/hash/
+// expires/signature instead of a request body.
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['auth', 'signed', 'throttle:6,1'])
+    ->name('verification.verify');
+// See EmailVerificationController::notice() — must resolve to something or
+// EnsureEmailIsVerified crashes on a non-JSON request, same as 'login'.
+Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
+    ->middleware('auth')
+    ->name('verification.notice');
+
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
@@ -29,4 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/user/avatar', [AvatarController::class, 'store']);
     Route::delete('/user/avatar', [AvatarController::class, 'destroy']);
     Route::delete('/user', [ProfileController::class, 'destroy']);
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 });

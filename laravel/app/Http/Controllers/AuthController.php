@@ -23,6 +23,16 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        // The account is already created and the user logged in; a broken
+        // mail provider or a rejected recipient must not turn that into a
+        // failed registration. They can always ask for the email again via
+        // POST /email/verification-notification.
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return response()->json($user, 201);
     }
 

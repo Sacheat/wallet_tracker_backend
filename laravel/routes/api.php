@@ -10,7 +10,7 @@ use App\Http\Controllers\PortfolioEntryController;
 use App\Http\Controllers\PriceAlertController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::get('/portfolio/news', [PortfolioController::class, 'news']);
     // Must come before apiResource: otherwise GET /assets/search is caught
