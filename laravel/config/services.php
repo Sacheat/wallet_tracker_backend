@@ -35,10 +35,6 @@ return [
         ],
     ],
 
-    'alpha_vantage' => [
-        'key' => env('ALPHA_VANTAGE_API_KEY'),
-    ],
-
     'cryptocompare' => [
         'key' => env('CRYPTOCOMPARE_API_KEY'),
     ],

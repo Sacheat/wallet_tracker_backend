@@ -4,8 +4,10 @@ namespace App\Services\PriceProviders;
 
 /**
  * Optional capability: only providers that expose a "profile" (description,
- * market cap) implement this — YahooFinanceGoldPriceProvider doesn't, since a
- * commodity has no company/project profile to describe.
+ * market cap) implement this — YahooFinancePriceProvider doesn't. Its
+ * profile endpoint (quoteSummary) requires a session crumb Yahoo's chart
+ * endpoint doesn't, so stock/ETF/gold asset details simply have no
+ * description or market cap (confirmed live, not assumed).
  */
 interface AssetInfoProviderInterface
 {

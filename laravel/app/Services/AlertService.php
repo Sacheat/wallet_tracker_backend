@@ -131,7 +131,7 @@ class AlertService
     private function evaluatePercentChange(PriceAlert $alert, float $currentPrice): void
     {
         $window = $alert->window;
-        $percentChange = $this->priceChangeCalculator->percentChange($alert->asset_id, $window, $currentPrice);
+        $percentChange = $this->priceChangeCalculator->percentChange($alert->asset, $window, $currentPrice);
 
         if ($percentChange === null) {
             return;

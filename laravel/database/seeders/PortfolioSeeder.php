@@ -44,7 +44,7 @@ class PortfolioSeeder extends Seeder
         ]);
 
         // external_id is Yahoo Finance's own ticker (GC=F, COMEX gold futures)
-        // — no free "official" gold API was found, see YahooFinanceGoldPriceProvider.
+        // — no free "official" gold API was found, see YahooFinancePriceProvider.
         $gold = Asset::create([
             'name' => 'Or (once troy)',
             'symbol' => 'XAU',

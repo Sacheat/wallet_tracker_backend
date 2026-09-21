@@ -5,33 +5,59 @@ namespace App\Services\PriceProviders;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PriceProviderInterface
+class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChangeProviderInterface, PriceProviderInterface
 {
     public function getUsdPrices(array $externalIds): array
+    {
+        return collect($this->getMarkets($externalIds))
+            ->map(fn (array $coin) => $coin['current_price'] ?? null)
+            ->toArray();
+    }
+
+    /**
+     * The /coins/markets endpoint reports 1h/24h/7d change alongside the
+     * price in the same payload, so this reuses the cached fetch from
+     * getUsdPrices() instead of a second request.
+     */
+    public function getPercentChanges(array $externalIds): array
+    {
+        return collect($this->getMarkets($externalIds))
+            ->map(fn (array $coin) => [
+                '1h' => $coin['price_change_percentage_1h_in_currency'] ?? null,
+                '24h' => $coin['price_change_percentage_24h_in_currency'] ?? null,
+                '7d' => $coin['price_change_percentage_7d_in_currency'] ?? null,
+            ])
+            ->toArray();
+    }
+
+    /**
+     * @param  array<int, string>  $externalIds
+     * @return array<string, array<string, mixed>> Keyed by coin id.
+     */
+    private function getMarkets(array $externalIds): array
     {
         if (empty($externalIds)) {
             return [];
         }
 
         sort($externalIds);
-        $cacheKey = 'crypto_usd_prices_'.md5(implode(',', $externalIds));
+        $cacheKey = 'crypto_markets_'.md5(implode(',', $externalIds));
         $backupKey = $cacheKey.'_backup';
 
         return Cache::remember($cacheKey, 45, function () use ($externalIds, $backupKey) {
             try {
-                $response = Http::get('https://api.coingecko.com/api/v3/simple/price', [
+                $response = Http::get('https://api.coingecko.com/api/v3/coins/markets', [
+                    'vs_currency' => 'usd',
                     'ids' => implode(',', $externalIds),
-                    'vs_currencies' => 'usd',
+                    'price_change_percentage' => '1h,24h,7d',
                 ]);
                 $response->throw();
 
-                $prices = collect($response->json())
-                    ->map(fn (array $price) => $price['usd'] ?? null)
-                    ->toArray();
+                $markets = collect($response->json())->keyBy('id')->toArray();
 
-                Cache::forever($backupKey, $prices);
+                Cache::forever($backupKey, $markets);
 
-                return $prices;
+                return $markets;
             } catch (\Exception $e) {
                 if (Cache::has($backupKey)) {
                     return Cache::get($backupKey);
@@ -39,7 +65,7 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PriceProvide
 
                 report($e);
 
-                return array_fill_keys($externalIds, null);
+                return [];
             }
         });
     }

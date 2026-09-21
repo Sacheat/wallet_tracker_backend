@@ -4,10 +4,9 @@ namespace App\Services;
 
 use App\Enums\AssetType;
 use App\Models\Asset;
-use App\Services\PriceProviders\AlphaVantagePriceProvider;
 use App\Services\PriceProviders\CoinGeckoPriceProvider;
 use App\Services\PriceProviders\PriceProviderInterface;
-use App\Services\PriceProviders\YahooFinanceGoldPriceProvider;
+use App\Services\PriceProviders\YahooFinancePriceProvider;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -19,14 +18,13 @@ class PriceService
 
     public function __construct(
         CoinGeckoPriceProvider $coinGeckoPriceProvider,
-        AlphaVantagePriceProvider $alphaVantagePriceProvider,
-        YahooFinanceGoldPriceProvider $yahooFinanceGoldPriceProvider,
+        YahooFinancePriceProvider $yahooFinancePriceProvider,
     ) {
         $this->providers = [
             AssetType::Crypto->value => $coinGeckoPriceProvider,
-            AssetType::Stock->value => $alphaVantagePriceProvider,
-            AssetType::Etf->value => $alphaVantagePriceProvider,
-            AssetType::Gold->value => $yahooFinanceGoldPriceProvider,
+            AssetType::Stock->value => $yahooFinancePriceProvider,
+            AssetType::Etf->value => $yahooFinancePriceProvider,
+            AssetType::Gold->value => $yahooFinancePriceProvider,
         ];
     }
 

@@ -39,7 +39,7 @@ class AssetDetailService
         $changePercent = [];
         foreach (AlertWindow::cases() as $window) {
             $changePercent[$window->value] = $currentPrice !== null
-                ? $this->priceChangeCalculator->percentChange($asset->id, $window, $currentPrice)
+                ? $this->priceChangeCalculator->percentChange($asset, $window, $currentPrice)
                 : null;
         }
 
