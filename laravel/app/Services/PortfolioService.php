@@ -8,7 +8,10 @@ use App\Models\User;
 
 class PortfolioService
 {
-    public function __construct(private PriceService $priceService) {}
+    public function __construct(
+        private PriceService $priceService,
+        private PriceChangeCalculator $priceChangeCalculator,
+    ) {}
 
     public function getPortfolioSummary(User $user): PortfolioSummary
     {
@@ -17,6 +20,7 @@ class PortfolioService
             ->get();
         $prices = $this->priceService->getUsdPrices($entries->pluck('asset'));
         $eurRate = $this->priceService->getUsdToEurRate();
+        $changePercent = $this->priceChangeCalculator->portfolioPercentChanges($entries, $prices);
 
         $enrichedEntries = $entries->map(function (PortfolioEntry $entry) use ($prices, $eurRate) {
             $priceUsd = $prices[$entry->asset->external_id] ?? 0;
@@ -37,6 +41,7 @@ class PortfolioService
             entries: $sortedEntries,
             totalValueUsd: round($totalValueUsd, 2),
             totalValueEur: round($totalValueEur, 2),
+            changePercent: $changePercent,
         );
     }
 }

@@ -20,6 +20,7 @@ class PortfolioController extends Controller
             'data' => PortfolioEntryResource::collection($summary->entries),
             'total_value_usd' => $summary->totalValueUsd,
             'total_value_eur' => $summary->totalValueEur,
+            'change_percent' => $summary->changePercent,
         ]);
     }
 
