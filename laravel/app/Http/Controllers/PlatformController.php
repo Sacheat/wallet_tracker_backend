@@ -32,6 +32,12 @@ class PlatformController extends Controller
 
     public function destroy(Platform $platform)
     {
+        if ($platform->portfolioEntries()->exists()) {
+            return response()->json([
+                'message' => 'Cette plateforme est utilisée dans au moins un portefeuille (potentiellement d\'un autre utilisateur) et ne peut pas être supprimée.',
+            ], 409);
+        }
+
         $platform->delete();
 
         return response()->noContent();
