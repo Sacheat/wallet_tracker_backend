@@ -21,6 +21,7 @@ class PortfolioController extends Controller
             'total_value_usd' => $summary->totalValueUsd,
             'total_value_eur' => $summary->totalValueEur,
             'change_percent' => $summary->changePercent,
+            'total_value_by_currency' => $summary->totalValueByCurrency,
         ]);
     }
 

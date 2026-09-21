@@ -8,6 +8,12 @@ use App\Models\User;
 
 class PortfolioService
 {
+    /**
+     * Beyond USD/EUR (already shown in the UI), currencies exposed via
+     * total_value_by_currency for a future currency picker.
+     */
+    private const EXTRA_CURRENCIES = ['GBP', 'CHF'];
+
     public function __construct(
         private PriceService $priceService,
         private PriceChangeCalculator $priceChangeCalculator,
@@ -19,7 +25,8 @@ class PortfolioService
             ->where('user_id', $user->id)
             ->get();
         $prices = $this->priceService->getUsdPrices($entries->pluck('asset'));
-        $eurRate = $this->priceService->getUsdToEurRate();
+        $rates = $this->priceService->getUsdToCurrencyRates(['EUR', ...self::EXTRA_CURRENCIES]);
+        $eurRate = $rates['EUR'];
         $changePercent = $this->priceChangeCalculator->portfolioPercentChanges($entries, $prices);
 
         $enrichedEntries = $entries->map(function (PortfolioEntry $entry) use ($prices, $eurRate) {
@@ -34,14 +41,21 @@ class PortfolioService
         });
 
         $sortedEntries = $enrichedEntries->sortByDesc('value_usd')->values();
-        $totalValueUsd = $sortedEntries->sum('value_usd');
-        $totalValueEur = $sortedEntries->sum('value_eur');
+        $totalValueUsd = round($sortedEntries->sum('value_usd'), 2);
+        $totalValueEur = round($sortedEntries->sum('value_eur'), 2);
+
+        $totalValueByCurrency = ['USD' => $totalValueUsd, 'EUR' => $totalValueEur];
+        foreach (self::EXTRA_CURRENCIES as $currency) {
+            $rate = $rates[$currency] ?? null;
+            $totalValueByCurrency[$currency] = $rate !== null ? round($totalValueUsd * $rate, 2) : null;
+        }
 
         return new PortfolioSummary(
             entries: $sortedEntries,
-            totalValueUsd: round($totalValueUsd, 2),
-            totalValueEur: round($totalValueEur, 2),
+            totalValueUsd: $totalValueUsd,
+            totalValueEur: $totalValueEur,
             changePercent: $changePercent,
+            totalValueByCurrency: $totalValueByCurrency,
         );
     }
 }

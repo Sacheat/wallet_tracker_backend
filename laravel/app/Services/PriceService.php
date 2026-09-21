@@ -30,25 +30,42 @@ class PriceService
 
     public function getUsdToEurRate(): float
     {
-        return Cache::remember('usd_eur_rate', 45, function () {
+        return $this->getUsdToCurrencyRates(['EUR'])['EUR'];
+    }
+
+    /**
+     * Frankfurter's /v2/rates has no filter param (a "symbols" query string
+     * returns a 422 — confirmed live, not assumed): it always returns every
+     * currency, so this fetches once and picks out whichever are asked for.
+     *
+     * @param  array<int, string>  $currencies  ISO codes, e.g. ['EUR', 'GBP', 'CHF'].
+     * @return array<string, float|null> Keyed by currency; null if that currency wasn't in the response.
+     */
+    public function getUsdToCurrencyRates(array $currencies): array
+    {
+        $rates = Cache::remember('usd_exchange_rates', 45, function () {
             try {
                 $response = Http::get('https://api.frankfurter.dev/v2/rates', [
                     'base' => 'USD',
                 ]);
 
                 $response->throw();
-                $rate = collect($response->json())->firstWhere('quote', 'EUR')['rate'];
-                Cache::forever('usd_eur_rate_backup', $rate);
+                $rates = collect($response->json())->pluck('rate', 'quote')->toArray();
+                Cache::forever('usd_exchange_rates_backup', $rates);
 
-                return $rate;
+                return $rates;
 
             } catch (\Exception $e) {
-                if (Cache::has('usd_eur_rate_backup')) {
-                    return Cache::get('usd_eur_rate_backup');
+                if (Cache::has('usd_exchange_rates_backup')) {
+                    return Cache::get('usd_exchange_rates_backup');
                 }
-                throw new \RuntimeException('Impossible de récupérer le taux USD/EUR', 0, $e);
+                throw new \RuntimeException('Impossible de récupérer les taux de change USD', 0, $e);
             }
         });
+
+        return collect($currencies)
+            ->mapWithKeys(fn (string $currency) => [$currency => $rates[$currency] ?? null])
+            ->all();
     }
 
     /**
