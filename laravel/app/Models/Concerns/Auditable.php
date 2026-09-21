@@ -28,8 +28,11 @@ trait Auditable
 
     protected function writeAuditLog(string $action, array $attributes): void
     {
+        // No authenticated user in a console context (e.g. alerts:check
+        // triggering a PriceAlert update) — fall back to the record's own
+        // owner so its audit trail isn't silently dropped.
         AuditLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => auth()->id() ?? $this->getAttribute('user_id'),
             'auditable_type' => static::class,
             'auditable_id' => $this->getKey(),
             'action' => $action,
