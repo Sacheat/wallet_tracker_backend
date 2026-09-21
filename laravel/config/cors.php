@@ -15,9 +15,24 @@ return [
     |
     */
 
-    // register/login/logout/user live outside /api (routes/web.php, session-based
-    // auth) but still need CORS since the frontend calls them cross-origin.
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'register', 'login', 'logout', 'user'],
+    // register/login/logout/user/* live outside /api (routes/web.php, session-based
+    // auth) but still need CORS since the frontend calls them cross-origin. Every
+    // account-management route added since must be listed here too, or the browser
+    // silently blocks it while curl (no CORS enforcement) keeps working fine —
+    // confirmed live: this list had gone stale and /user/*, /forgot-password,
+    // /reset-password, /email/* were all unreachable from the SPA.
+    'paths' => [
+        'api/*',
+        'sanctum/csrf-cookie',
+        'register',
+        'login',
+        'logout',
+        'user',
+        'user/*',
+        'forgot-password',
+        'reset-password',
+        'email/*',
+    ],
 
     'allowed_methods' => ['*'],
 
