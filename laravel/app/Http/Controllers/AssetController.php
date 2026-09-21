@@ -6,13 +6,22 @@ use App\Http\Requests\StoreAssetRequest;
 use App\Http\Requests\UpdateAssetRequest;
 use App\Models\Asset;
 use App\Services\AssetDetailService;
+use App\Services\AssetSearchService;
 use App\Services\NewsService;
+use Illuminate\Http\Request;
 
 class AssetController extends Controller
 {
     public function index()
     {
         return Asset::all();
+    }
+
+    public function search(Request $request, AssetSearchService $assetSearchService)
+    {
+        $validated = $request->validate(['q' => 'required|string|min:2|max:100']);
+
+        return ['data' => $assetSearchService->search($validated['q'])];
     }
 
     public function details(Asset $asset, AssetDetailService $assetDetailService)
