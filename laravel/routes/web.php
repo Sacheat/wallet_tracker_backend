@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +23,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user', [ProfileController::class, 'update']);
     Route::patch('/user/password', [ProfileController::class, 'updatePassword']);
+    Route::post('/user/avatar', [AvatarController::class, 'store']);
+    Route::delete('/user/avatar', [AvatarController::class, 'destroy']);
 });
