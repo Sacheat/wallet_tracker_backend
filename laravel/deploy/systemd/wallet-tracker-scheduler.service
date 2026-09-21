@@ -1,0 +1,7 @@
+[Unit]
+Description=Wallet Tracker - tick Laravel's scheduler (schedule:run)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Dev/wallet_tracker_backend/laravel
+ExecStart=/bin/php artisan schedule:run --no-interaction

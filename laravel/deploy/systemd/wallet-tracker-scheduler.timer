@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the Wallet Tracker Laravel scheduler every minute
+
+[Timer]
+# Standard "cron every minute" equivalent — Laravel's own Schedule facade
+# (routes/console.php) decides which commands are actually due on each tick.
+OnCalendar=*:0/1
+# Catch up a missed tick after the machine was asleep/off, like cron would
+# on the next boot — avoids silently skipping an hourly job.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
