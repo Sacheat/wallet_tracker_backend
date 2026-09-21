@@ -121,6 +121,9 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel/mcp" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/laravel/roster" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/symfony/yaml" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/storage/app" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/storage/framework" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/_laravel_idea" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

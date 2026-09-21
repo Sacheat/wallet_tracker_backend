@@ -132,6 +132,7 @@
       <path value="$PROJECT_DIR$/laravel/vendor/laravel/roster" />
       <path value="$PROJECT_DIR$/laravel/vendor/laravel/boost" />
       <path value="$PROJECT_DIR$/laravel/vendor/laravel/mcp" />
+      <path value="$PROJECT_DIR$/laravel/vendor/_laravel_idea" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.3">
