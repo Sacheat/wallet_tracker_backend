@@ -25,4 +25,5 @@ Route::middleware('auth')->group(function () {
     Route::patch('/user/password', [ProfileController::class, 'updatePassword']);
     Route::post('/user/avatar', [AvatarController::class, 'store']);
     Route::delete('/user/avatar', [AvatarController::class, 'destroy']);
+    Route::delete('/user', [ProfileController::class, 'destroy']);
 });
