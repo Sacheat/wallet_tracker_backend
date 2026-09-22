@@ -44,10 +44,13 @@ Route::middleware('auth')->group(function () {
     // Same cap as the resend route below: an email change sends a
     // verification mail to whatever address was typed.
     Route::patch('/user', [ProfileController::class, 'update'])->middleware('throttle:6,1');
-    Route::patch('/user/password', [ProfileController::class, 'updatePassword']);
+    // Both require current_password: without a throttle, a hijacked session
+    // gets unlimited guesses at it (found in a security audit — every other
+    // sensitive route in this file already has one, these two didn't).
+    Route::patch('/user/password', [ProfileController::class, 'updatePassword'])->middleware('throttle:6,1');
     Route::post('/user/avatar', [AvatarController::class, 'store']);
     Route::delete('/user/avatar', [AvatarController::class, 'destroy']);
-    Route::delete('/user', [ProfileController::class, 'destroy']);
+    Route::delete('/user', [ProfileController::class, 'destroy'])->middleware('throttle:6,1');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
         ->middleware('throttle:6,1')
         ->name('verification.send');

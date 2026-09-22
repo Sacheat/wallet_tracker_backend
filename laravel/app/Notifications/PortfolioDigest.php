@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\DTO\PortfolioSummary;
 use App\Notifications\Channels\DiscordWebhookChannel;
+use App\Notifications\Concerns\EscapesMarkdown;
 use App\Notifications\Concerns\FormatsNumbersForHumans;
 use App\Notifications\Concerns\QueuedWithRetries;
 use App\Services\GeminiSummaryService;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
 
 class PortfolioDigest extends Notification implements ShouldQueue
 {
-    use FormatsNumbersForHumans, QueuedWithRetries;
+    use EscapesMarkdown, FormatsNumbersForHumans, QueuedWithRetries;
 
     /**
      * @param  'daily'|'weekly'  $frequency
@@ -50,11 +51,11 @@ class PortfolioDigest extends Notification implements ShouldQueue
             ->line("Valeur totale : {$this->formatNumber($this->summary->totalValueUsd)} \$ / {$this->formatNumber($this->summary->totalValueEur)} €");
 
         if ($aiSummary = $this->aiSummary($notifiable)) {
-            $mail->line($aiSummary);
+            $mail->line($this->escapeMarkdown($aiSummary));
         }
 
         foreach ($this->summary->entries as $entry) {
-            $mail->line("- {$entry->asset->name} sur {$entry->platform->name} : {$this->formatNumber($entry->value_usd)} \$");
+            $mail->line("- {$this->escapeMarkdown($entry->asset->name)} sur {$this->escapeMarkdown($entry->platform->name)} : {$this->formatNumber($entry->value_usd)} \$");
         }
 
         return $mail;
@@ -64,13 +65,13 @@ class PortfolioDigest extends Notification implements ShouldQueue
     {
         $label = $this->frequency === 'daily' ? 'quotidien' : 'hebdomadaire';
         $lines = $this->summary->entries
-            ->map(fn ($entry) => "- {$entry->asset->name} sur {$entry->platform->name} : {$this->formatNumber($entry->value_usd)} \$")
+            ->map(fn ($entry) => "- {$this->escapeMarkdown($entry->asset->name)} sur {$this->escapeMarkdown($entry->platform->name)} : {$this->formatNumber($entry->value_usd)} \$")
             ->implode("\n");
 
         $message = "📊 Digest {$label}\nTotal : {$this->formatNumber($this->summary->totalValueUsd)} \$ / {$this->formatNumber($this->summary->totalValueEur)} €\n{$lines}";
 
         if ($aiSummary = $this->aiSummary($notifiable)) {
-            $message .= "\n\n{$aiSummary}";
+            $message .= "\n\n{$this->escapeMarkdown($aiSummary)}";
         }
 
         return $message;
