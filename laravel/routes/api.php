@@ -26,4 +26,5 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/notification-settings', [NotificationSettingsController::class, 'show']);
     Route::patch('/notification-settings', [NotificationSettingsController::class, 'update']);
     Route::get('/market/fear-greed-index', [MarketController::class, 'fearGreedIndex']);
+    Route::get('/exchange-rates', [MarketController::class, 'exchangeRates']);
 });

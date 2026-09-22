@@ -43,7 +43,39 @@ class PriceService
      */
     public function getUsdToCurrencyRates(array $currencies): array
     {
-        $rates = Cache::remember('usd_exchange_rates', 45, function () {
+        $rates = $this->fetchUsdRates()['rates'];
+
+        return collect($currencies)
+            ->mapWithKeys(fn (string $currency) => [$currency => $rates[$currency] ?? null])
+            ->all();
+    }
+
+    /**
+     * Same source and cache as getUsdToCurrencyRates(), plus the moment those
+     * rates were fetched — for consumers that need to show/compare freshness
+     * (e.g. the exchange-rates endpoint), not just the values.
+     *
+     * @param  array<int, string>  $currencies
+     * @return array{rates: array<string, float|null>, updated_at: string}
+     */
+    public function getUsdToCurrencyRatesWithTimestamp(array $currencies): array
+    {
+        $snapshot = $this->fetchUsdRates();
+
+        return [
+            'rates' => collect($currencies)
+                ->mapWithKeys(fn (string $currency) => [$currency => $snapshot['rates'][$currency] ?? null])
+                ->all(),
+            'updated_at' => $snapshot['updated_at'],
+        ];
+    }
+
+    /**
+     * @return array{rates: array<string, float>, updated_at: string}
+     */
+    private function fetchUsdRates(): array
+    {
+        return Cache::remember('usd_exchange_rates', 45, function () {
             try {
                 $response = Http::get('https://api.frankfurter.dev/v2/rates', [
                     'base' => 'USD',
@@ -51,9 +83,10 @@ class PriceService
 
                 $response->throw();
                 $rates = collect($response->json())->pluck('rate', 'quote')->toArray();
-                Cache::forever('usd_exchange_rates_backup', $rates);
+                $snapshot = ['rates' => $rates, 'updated_at' => now()->toIso8601String()];
+                Cache::forever('usd_exchange_rates_backup', $snapshot);
 
-                return $rates;
+                return $snapshot;
 
             } catch (\Exception $e) {
                 if (Cache::has('usd_exchange_rates_backup')) {
@@ -62,10 +95,6 @@ class PriceService
                 throw new \RuntimeException('Impossible de récupérer les taux de change USD', 0, $e);
             }
         });
-
-        return collect($currencies)
-            ->mapWithKeys(fn (string $currency) => [$currency => $rates[$currency] ?? null])
-            ->all();
     }
 
     /**
