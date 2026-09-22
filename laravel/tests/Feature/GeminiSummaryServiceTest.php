@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\DTO\PortfolioSummary;
+use App\Enums\AssetType;
 use App\Models\Asset;
 use App\Models\Platform;
 use App\Models\PortfolioEntry;
@@ -37,7 +38,7 @@ class GeminiSummaryServiceTest extends TestCase
 
     private function summary(float $totalValueUsd = 12450.0): PortfolioSummary
     {
-        $asset = new Asset(['name' => 'Bitcoin', 'symbol' => 'BTC']);
+        $asset = new Asset(['name' => 'Bitcoin', 'symbol' => 'BTC', 'type' => AssetType::Crypto]);
         $asset->id = 1;
         $platform = new Platform(['name' => 'Binance']);
         $platform->id = 1;

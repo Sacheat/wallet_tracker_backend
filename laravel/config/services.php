@@ -43,4 +43,8 @@ return [
         'key' => env('GEMINI_API_KEY'),
     ],
 
+    'marketaux' => [
+        'key' => env('MARKETAUX_API_KEY'),
+    ],
+
 ];
