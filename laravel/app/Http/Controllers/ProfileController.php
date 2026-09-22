@@ -11,11 +11,32 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
+    /**
+     * A new address hasn't proven anything: without this, a verified account
+     * could switch to an email it doesn't own and stay "verified". So an
+     * email change un-verifies the account (the 'verified' middleware then
+     * blocks /api/* until the new address is confirmed) and sends a fresh
+     * verification mail. Links already sent to the old address stop working
+     * on their own — they're signed with a hash of the email.
+     */
     public function update(UpdateProfileRequest $request)
     {
-        $request->user()->update($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        return $request->user();
+        $emailChanged = $user->isDirty('email');
+
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return $user;
     }
 
     public function updatePassword(UpdatePasswordRequest $request)

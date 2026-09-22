@@ -41,7 +41,9 @@ Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
-    Route::patch('/user', [ProfileController::class, 'update']);
+    // Same cap as the resend route below: an email change sends a
+    // verification mail to whatever address was typed.
+    Route::patch('/user', [ProfileController::class, 'update'])->middleware('throttle:6,1');
     Route::patch('/user/password', [ProfileController::class, 'updatePassword']);
     Route::post('/user/avatar', [AvatarController::class, 'store']);
     Route::delete('/user/avatar', [AvatarController::class, 'destroy']);
