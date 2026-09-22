@@ -21,10 +21,7 @@ class PriceAlertController extends Controller
 
     public function store(StorePriceAlertRequest $request)
     {
-        return PriceAlert::create([
-            ...$request->validated(),
-            'user_id' => $request->user()->id,
-        ]);
+        return $request->user()->priceAlerts()->create($request->validated());
     }
 
     public function show(PriceAlert $priceAlert)

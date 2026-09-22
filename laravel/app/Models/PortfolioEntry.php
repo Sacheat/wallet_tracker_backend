@@ -10,8 +10,9 @@ class PortfolioEntry extends Model
 {
     use Auditable;
 
+    // user_id is deliberately not fillable: it is set from the authenticated
+    // user through $user->portfolioEntries()->create(), never from request data.
     protected $fillable = [
-        'user_id',
         'asset_id',
         'platform_id',
         'quantity',

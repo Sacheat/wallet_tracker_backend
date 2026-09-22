@@ -21,10 +21,7 @@ class PortfolioEntryController extends Controller
 
     public function store(StorePortfolioEntryRequest $request)
     {
-        return PortfolioEntry::create([
-            ...$request->validated(),
-            'user_id' => $request->user()->id,
-        ]);
+        return $request->user()->portfolioEntries()->create($request->validated());
     }
 
     public function show(PortfolioEntry $portfolioEntry)

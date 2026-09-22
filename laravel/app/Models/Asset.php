@@ -17,8 +17,6 @@ class Asset extends Model
         'type',
         'logo_url',
         'external_id',
-        'last_known_price_usd',
-        'last_price_synced_at',
     ];
 
     protected $casts = [

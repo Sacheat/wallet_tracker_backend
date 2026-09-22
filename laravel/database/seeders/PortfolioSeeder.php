@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\AssetType;
 use App\Models\Asset;
 use App\Models\Platform;
-use App\Models\PortfolioEntry;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -64,50 +63,43 @@ class PortfolioSeeder extends Seeder
             ['name' => 'Other User', 'password' => $testUser->password],
         );
 
-        PortfolioEntry::create([
-            'user_id' => $testUser->id,
+        $testUser->portfolioEntries()->create([
             'asset_id' => $bitcoin->id,
             'platform_id' => $binance->id,
             'quantity' => 0.1,
         ]);
 
-        PortfolioEntry::create([
-            'user_id' => $testUser->id,
+        $testUser->portfolioEntries()->create([
             'asset_id' => $bitcoin->id,
             'platform_id' => $kraken->id,
             'quantity' => 0.02,
         ]);
 
-        PortfolioEntry::create([
-            'user_id' => $testUser->id,
+        $testUser->portfolioEntries()->create([
             'asset_id' => $ethereum->id,
             'platform_id' => $binance->id,
             'quantity' => 1.5,
         ]);
 
-        PortfolioEntry::create([
-            'user_id' => $testUser->id,
+        $testUser->portfolioEntries()->create([
             'asset_id' => $solana->id,
             'platform_id' => $kraken->id,
             'quantity' => 12,
         ]);
 
-        PortfolioEntry::create([
-            'user_id' => $testUser->id,
+        $testUser->portfolioEntries()->create([
             'asset_id' => $apple->id,
             'platform_id' => $kraken->id,
             'quantity' => 3,
         ]);
 
-        PortfolioEntry::create([
-            'user_id' => $testUser->id,
+        $testUser->portfolioEntries()->create([
             'asset_id' => $gold->id,
             'platform_id' => $binance->id,
             'quantity' => 0.5,
         ]);
 
-        PortfolioEntry::create([
-            'user_id' => $otherUser->id,
+        $otherUser->portfolioEntries()->create([
             'asset_id' => $ethereum->id,
             'platform_id' => $kraken->id,
             'quantity' => 0.75,
