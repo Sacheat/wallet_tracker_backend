@@ -6,6 +6,7 @@ use App\DTO\PortfolioSummary;
 use App\Notifications\Channels\DiscordWebhookChannel;
 use App\Notifications\Concerns\FormatsNumbersForHumans;
 use App\Notifications\Concerns\QueuedWithRetries;
+use App\Services\GeminiSummaryService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -48,6 +49,10 @@ class PortfolioDigest extends Notification implements ShouldQueue
             ->subject("Crypto Portfolio Tracker — Digest {$label}")
             ->line("Valeur totale : {$this->formatNumber($this->summary->totalValueUsd)} \$ / {$this->formatNumber($this->summary->totalValueEur)} €");
 
+        if ($aiSummary = $this->aiSummary($notifiable)) {
+            $mail->line($aiSummary);
+        }
+
         foreach ($this->summary->entries as $entry) {
             $mail->line("- {$entry->asset->name} sur {$entry->platform->name} : {$this->formatNumber($entry->value_usd)} \$");
         }
@@ -62,6 +67,24 @@ class PortfolioDigest extends Notification implements ShouldQueue
             ->map(fn ($entry) => "- {$entry->asset->name} sur {$entry->platform->name} : {$this->formatNumber($entry->value_usd)} \$")
             ->implode("\n");
 
-        return "📊 Digest {$label}\nTotal : {$this->formatNumber($this->summary->totalValueUsd)} \$ / {$this->formatNumber($this->summary->totalValueEur)} €\n{$lines}";
+        $message = "📊 Digest {$label}\nTotal : {$this->formatNumber($this->summary->totalValueUsd)} \$ / {$this->formatNumber($this->summary->totalValueEur)} €\n{$lines}";
+
+        if ($aiSummary = $this->aiSummary($notifiable)) {
+            $message .= "\n\n{$aiSummary}";
+        }
+
+        return $message;
+    }
+
+    /**
+     * Mail and Discord are dispatched as separate queued jobs (see
+     * QueuedWithRetries), each with its own deserialized copy of this
+     * notification — GeminiSummaryService's own per-user/day cache is what
+     * keeps that at one Gemini call instead of one per channel, not this
+     * method (no per-instance memoization would survive across jobs).
+     */
+    private function aiSummary(object $notifiable): ?string
+    {
+        return app(GeminiSummaryService::class)->summarizeDigest($this->summary, $notifiable, $this->frequency);
     }
 }
