@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Currency;
 use App\Services\PriceService;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -69,5 +70,25 @@ class ExchangeRatesTest extends TestCase
 
         $this->assertSame(0.92, $snapshot['rates']['EUR']);
         $this->assertNull($snapshot['rates']['XYZ']);
+    }
+
+    public function test_usd_conversion_never_touches_the_network(): void
+    {
+        // No Http::fake() at all: preventStrayRequests() means any actual
+        // HTTP attempt fails the test, proving the USD short-circuit works.
+        $priceService = app(PriceService::class);
+
+        $this->assertSame(150.0, $priceService->convertToUsd(150.0, Currency::Usd));
+    }
+
+    public function test_a_non_usd_amount_is_divided_by_its_usd_rate(): void
+    {
+        Http::fake([self::RATES_URL => Http::response($this->frankfurterRows())]);
+        $priceService = app(PriceService::class);
+
+        // 92 EUR at a rate of 0.92 EUR per USD is 100 USD.
+        $usd = $priceService->convertToUsd(92.0, Currency::Eur);
+
+        $this->assertSame(100.0, $usd);
     }
 }

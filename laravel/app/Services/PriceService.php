@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AssetType;
+use App\Enums\Currency;
 use App\Models\Asset;
 use App\Services\PriceProviders\CoinGeckoPriceProvider;
 use App\Services\PriceProviders\PriceProviderInterface;
@@ -68,6 +69,23 @@ class PriceService
                 ->all(),
             'updated_at' => $snapshot['updated_at'],
         ];
+    }
+
+    /**
+     * USD short-circuits with zero cache/HTTP lookup — most accounts default
+     * to it, and it should never depend on Frankfurter being up. Throws
+     * RuntimeException (from fetchUsdRates()) if a live rate genuinely can't
+     * be found for a non-USD amount; callers decide how to surface that.
+     */
+    public function convertToUsd(float $amount, Currency $currency): float
+    {
+        if ($currency === Currency::Usd) {
+            return $amount;
+        }
+
+        $rate = $this->getUsdToCurrencyRates([$currency->value])[$currency->value];
+
+        return round($amount / $rate, 8);
     }
 
     /**
