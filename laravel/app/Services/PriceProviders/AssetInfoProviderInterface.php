@@ -12,7 +12,10 @@ namespace App\Services\PriceProviders;
 interface AssetInfoProviderInterface
 {
     /**
+     * @param  string  $locale  ISO 639-1-ish code (e.g. 'fr', 'en'). Falls
+     *                          back to English when the provider has no
+     *                          description in the requested language.
      * @return array{description: ?string, market_cap_usd: ?float}
      */
-    public function getInfo(string $externalId): array;
+    public function getInfo(string $externalId, string $locale = 'en'): array;
 }

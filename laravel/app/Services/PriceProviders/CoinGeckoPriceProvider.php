@@ -134,15 +134,22 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
         return "crypto_market_{$id}";
     }
 
-    public function getInfo(string $externalId): array
+    /**
+     * Descriptions for every language CoinGecko has are cached together,
+     * under one entry per coin — the underlying request costs the same
+     * whether we keep 1 language or all of them, so caching all of them
+     * means a new $locale never needs a fresh fetch, only a different pick
+     * from what's already cached.
+     */
+    public function getInfo(string $externalId, string $locale = 'en'): array
     {
         $cacheKey = "coingecko_info_{$externalId}";
-        $empty = ['description' => null, 'market_cap_usd' => null];
+        $empty = ['descriptions' => [], 'market_cap_usd' => null];
 
-        return Cache::remember($cacheKey, 3600, function () use ($externalId, $empty) {
+        $info = Cache::remember($cacheKey, 3600, function () use ($externalId, $empty) {
             try {
                 $response = Http::get("https://api.coingecko.com/api/v3/coins/{$externalId}", [
-                    'localization' => 'false',
+                    'localization' => 'true',
                     'tickers' => 'false',
                     'community_data' => 'false',
                     'developer_data' => 'false',
@@ -152,7 +159,7 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
                 $data = $response->json();
 
                 return [
-                    'description' => data_get($data, 'description.en') ?: null,
+                    'descriptions' => data_get($data, 'description', []),
                     'market_cap_usd' => data_get($data, 'market_data.market_cap.usd'),
                 ];
             } catch (\Exception $e) {
@@ -161,5 +168,10 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
                 return $empty;
             }
         });
+
+        return [
+            'description' => ($info['descriptions'][$locale] ?? null) ?: ($info['descriptions']['en'] ?? null) ?: null,
+            'market_cap_usd' => $info['market_cap_usd'],
+        ];
     }
 }

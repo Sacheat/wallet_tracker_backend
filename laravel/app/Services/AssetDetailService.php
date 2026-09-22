@@ -24,7 +24,7 @@ class AssetDetailService
      *     history_7d: Collection<int, PriceSnapshot>,
      * }
      */
-    public function getDetails(Asset $asset): array
+    public function getDetails(Asset $asset, string $locale = 'fr'): array
     {
         $prices = $this->priceService->getUsdPrices(collect([$asset]));
         $currentPrice = $prices[$asset->external_id] ?? null;
@@ -33,7 +33,7 @@ class AssetDetailService
         $provider = $this->priceService->providerFor($asset->type);
 
         if ($provider instanceof AssetInfoProviderInterface && $asset->external_id) {
-            $info = $provider->getInfo($asset->external_id);
+            $info = $provider->getInfo($asset->external_id, $locale);
         }
 
         $changePercent = [];

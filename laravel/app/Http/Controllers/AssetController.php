@@ -24,9 +24,13 @@ class AssetController extends Controller
         return ['data' => $assetSearchService->search($validated['q'])];
     }
 
-    public function details(Asset $asset, AssetDetailService $assetDetailService)
+    public function details(Request $request, Asset $asset, AssetDetailService $assetDetailService)
     {
-        return $assetDetailService->getDetails($asset);
+        $locale = $request->validate([
+            'locale' => 'nullable|string|regex:/^[a-z]{2}(-[a-z]{2})?$/i|max:5',
+        ])['locale'] ?? 'fr';
+
+        return $assetDetailService->getDetails($asset, $locale);
     }
 
     public function news(Asset $asset, NewsService $newsService)

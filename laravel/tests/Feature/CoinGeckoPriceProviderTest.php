@@ -12,6 +12,8 @@ class CoinGeckoPriceProviderTest extends TestCase
 {
     private const MARKETS_URL = 'api.coingecko.com/api/v3/coins/markets*';
 
+    private const COIN_URL = 'api.coingecko.com/api/v3/coins/bitcoin*';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -158,5 +160,45 @@ class CoinGeckoPriceProviderTest extends TestCase
         $this->assertCount(300, $prices);
         Http::assertSentCount(2);
         Http::assertSent(fn (Request $request) => $request['per_page'] === 250);
+    }
+
+    public function test_the_requested_locales_description_is_returned(): void
+    {
+        Http::fake([self::COIN_URL => Http::response([
+            'description' => ['en' => 'Bitcoin is digital gold.', 'fr' => "Bitcoin est de l'or numérique."],
+            'market_data' => ['market_cap' => ['usd' => 1_000_000]],
+        ])]);
+        $provider = new CoinGeckoPriceProvider;
+
+        $info = $provider->getInfo('bitcoin', 'fr');
+
+        $this->assertSame("Bitcoin est de l'or numérique.", $info['description']);
+        $this->assertEquals(1_000_000, $info['market_cap_usd']);
+    }
+
+    public function test_an_empty_translation_falls_back_to_english(): void
+    {
+        Http::fake([self::COIN_URL => Http::response([
+            'description' => ['en' => 'Pepe is a meme coin.', 'fr' => ''],
+        ])]);
+        $provider = new CoinGeckoPriceProvider;
+
+        $info = $provider->getInfo('bitcoin', 'fr');
+
+        $this->assertSame('Pepe is a meme coin.', $info['description']);
+    }
+
+    public function test_all_languages_are_cached_together_so_a_new_locale_costs_no_extra_request(): void
+    {
+        Http::fake([self::COIN_URL => Http::response([
+            'description' => ['en' => 'Bitcoin is digital gold.', 'fr' => "Bitcoin est de l'or numérique."],
+        ])]);
+        $provider = new CoinGeckoPriceProvider;
+
+        $provider->getInfo('bitcoin', 'fr');
+        $info = $provider->getInfo('bitcoin', 'en');
+
+        $this->assertSame('Bitcoin is digital gold.', $info['description']);
+        Http::assertSentCount(1);
     }
 }
