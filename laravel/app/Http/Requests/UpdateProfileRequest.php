@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Currency;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,6 +32,7 @@ class UpdateProfileRequest extends FormRequest
                 $this->input('email') !== $this->user()->email,
                 ['required', 'current_password'],
             ),
+            'currency' => ['sometimes', Rule::enum(Currency::class)],
         ];
     }
 }

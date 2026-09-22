@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Currency;
 use App\Notifications\QueuedResetPassword;
 use App\Notifications\QueuedVerifyEmail;
 use Database\Factories\UserFactory;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
     'discord_webhook_url',
     'daily_digest_enabled',
     'weekly_digest_enabled',
+    'currency',
 ])]
 // avatar_path is deliberately excluded from Fillable: it's only ever set by
 // AvatarController via a direct attribute assignment, never through mass
@@ -49,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'email_notifications_enabled' => 'boolean',
             'daily_digest_enabled' => 'boolean',
             'weekly_digest_enabled' => 'boolean',
+            'currency' => Currency::class,
         ];
     }
 

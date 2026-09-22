@@ -19,6 +19,11 @@ class AuthController extends Controller
             'email' => $request->validated('email'),
             'password' => Hash::make($request->validated('password')),
         ]);
+        // create() only carries the attributes passed above — columns filled
+        // in by a DB-level default (currency, email_notifications_enabled...)
+        // are missing from this in-memory instance until reloaded from the
+        // row Laravel just inserted, unlike /login's response (a fresh query).
+        $user->refresh();
 
         Auth::login($user);
         $request->session()->regenerate();
