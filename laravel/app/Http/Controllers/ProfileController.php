@@ -22,12 +22,16 @@ class ProfileController extends Controller
     public function update(UpdateProfileRequest $request)
     {
         $user = $request->user();
-        $user->fill($request->safe()->except('current_password'));
+        $user->fill($request->safe()->except(['current_password', 'onboarding_completed']));
 
         $emailChanged = $user->isDirty('email');
 
         if ($emailChanged) {
             $user->email_verified_at = null;
+        }
+
+        if ($request->boolean('onboarding_completed')) {
+            $user->onboarding_completed_at = now();
         }
 
         $user->save();

@@ -39,6 +39,11 @@ class UpdateProfileRequest extends FormRequest
                 ['required', 'current_password'],
             ),
             'currency' => ['sometimes', Rule::enum(Currency::class)],
+            // Write-only intent, not the column itself: true is the only
+            // valid value, there's no product case for un-completing
+            // onboarding, so a false/anything-else is rejected rather than
+            // silently ignored.
+            'onboarding_completed' => ['sometimes', 'accepted'],
         ];
     }
 }

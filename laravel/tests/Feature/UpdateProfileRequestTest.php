@@ -57,4 +57,19 @@ class UpdateProfileRequestTest extends TestCase
 
         $this->assertFalse($validator->errors()->has('current_password'));
     }
+
+    public function test_onboarding_completed_true_alone_is_valid_and_asks_no_password(): void
+    {
+        $validator = $this->rulesFor(['onboarding_completed' => true]);
+
+        $this->assertFalse($validator->fails());
+        $this->assertFalse($validator->errors()->has('current_password'));
+    }
+
+    public function test_onboarding_completed_false_is_rejected(): void
+    {
+        $validator = $this->rulesFor(['onboarding_completed' => false]);
+
+        $this->assertTrue($validator->fails());
+    }
 }

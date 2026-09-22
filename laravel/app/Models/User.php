@@ -28,9 +28,11 @@ use Illuminate\Support\Facades\Storage;
     'weekly_digest_enabled',
     'currency',
 ])]
-// avatar_path is deliberately excluded from Fillable: it's only ever set by
-// AvatarController via a direct attribute assignment, never through mass
-// assignment on the general profile-update endpoint.
+// avatar_path and onboarding_completed_at are deliberately excluded from
+// Fillable: the client sends a boolean intent (avatar file, or
+// onboarding_completed: true), never the resulting value directly —
+// ProfileController sets onboarding_completed_at = now() itself, same
+// pattern as AvatarController for avatar_path.
 #[Hidden(['password', 'remember_token', 'avatar_path'])]
 #[Appends(['avatar_url'])]
 class User extends Authenticatable implements MustVerifyEmailContract
@@ -47,6 +49,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     {
         return [
             'email_verified_at' => 'datetime',
+            'onboarding_completed_at' => 'datetime',
             'password' => 'hashed',
             'email_notifications_enabled' => 'boolean',
             'daily_digest_enabled' => 'boolean',
