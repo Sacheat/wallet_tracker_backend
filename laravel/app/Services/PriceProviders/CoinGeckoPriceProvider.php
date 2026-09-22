@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Http;
 
 class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChangeProviderInterface, PriceProviderInterface
 {
+    private const MARKET_TTL_SECONDS = 45;
+
+    /** Documented maximum for /coins/markets per_page. */
+    private const MAX_IDS_PER_REQUEST = 250;
+
     public function getUsdPrices(array $externalIds): array
     {
         return collect($this->getMarkets($externalIds))
@@ -31,43 +36,102 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
     }
 
     /**
+     * Cached per coin, not per set of ids: any caller — the whole portfolio,
+     * a single alert's asset, the asset detail page — reads the same entries
+     * and only the coins missing from the cache are fetched, in one batched
+     * request. (Keyed by the id set, a batched price lookup and the
+     * per-asset change lookups that followed it never shared a cache entry,
+     * so N coins cost N+1 requests, on a free tier that answers 429.)
+     *
      * @param  array<int, string>  $externalIds
-     * @return array<string, array<string, mixed>> Keyed by coin id.
+     * @return array<string, array<string, mixed>> Keyed by coin id; coins that couldn't be resolved are left out.
      */
     private function getMarkets(array $externalIds): array
     {
+        $externalIds = array_values(array_unique($externalIds));
+
         if (empty($externalIds)) {
             return [];
         }
 
-        sort($externalIds);
-        $cacheKey = 'crypto_markets_'.md5(implode(',', $externalIds));
-        $backupKey = $cacheKey.'_backup';
+        $cached = Cache::many(array_map(fn (string $id) => $this->marketKey($id), $externalIds));
+        $markets = [];
+        $missing = [];
 
-        return Cache::remember($cacheKey, 45, function () use ($externalIds, $backupKey) {
+        foreach ($externalIds as $id) {
+            $entry = $cached[$this->marketKey($id)] ?? null;
+
+            if ($entry === null) {
+                $missing[] = $id;
+            } else {
+                $markets[$id] = $entry;
+            }
+        }
+
+        if ($missing) {
+            $markets += $this->fetchMarkets($missing);
+        }
+
+        // An empty entry is a cached "couldn't resolve this coin".
+        return array_filter($markets);
+    }
+
+    /**
+     * One request per chunk of MAX_IDS_PER_REQUEST: /coins/markets paginates
+     * (100 per page by default) and silently drops the rest — confirmed
+     * live, not assumed.
+     *
+     * A failed request falls back to each coin's last good copy and, either
+     * way, caches the outcome for the normal TTL so a rate-limited API isn't
+     * hit again on every call.
+     *
+     * @param  array<int, string>  $ids
+     * @return array<string, array<string, mixed>>
+     */
+    private function fetchMarkets(array $ids): array
+    {
+        $fetched = [];
+
+        foreach (array_chunk($ids, self::MAX_IDS_PER_REQUEST) as $chunk) {
+            $rows = null;
+
             try {
                 $response = Http::get('https://api.coingecko.com/api/v3/coins/markets', [
                     'vs_currency' => 'usd',
-                    'ids' => implode(',', $externalIds),
+                    'ids' => implode(',', $chunk),
+                    'per_page' => self::MAX_IDS_PER_REQUEST,
                     'price_change_percentage' => '1h,24h,7d',
                 ]);
                 $response->throw();
 
-                $markets = collect($response->json())->keyBy('id')->toArray();
-
-                Cache::forever($backupKey, $markets);
-
-                return $markets;
+                $rows = collect($response->json())->keyBy('id')->toArray();
             } catch (\Exception $e) {
-                if (Cache::has($backupKey)) {
-                    return Cache::get($backupKey);
+                report($e);
+            }
+
+            foreach ($chunk as $id) {
+                $key = $this->marketKey($id);
+
+                if (isset($rows[$id])) {
+                    $entry = $rows[$id];
+                    Cache::forever("{$key}_backup", $entry);
+                } else {
+                    // Request failed: last good copy, if any. Request fine
+                    // but the coin absent (unknown id): nothing to serve.
+                    $entry = $rows === null ? Cache::get("{$key}_backup", []) : [];
                 }
 
-                report($e);
-
-                return [];
+                Cache::put($key, $entry, self::MARKET_TTL_SECONDS);
+                $fetched[$id] = $entry;
             }
-        });
+        }
+
+        return $fetched;
+    }
+
+    private function marketKey(string $id): string
+    {
+        return "crypto_market_{$id}";
     }
 
     public function getInfo(string $externalId): array
