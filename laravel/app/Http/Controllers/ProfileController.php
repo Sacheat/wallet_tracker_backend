@@ -22,7 +22,7 @@ class ProfileController extends Controller
     public function update(UpdateProfileRequest $request)
     {
         $user = $request->user();
-        $user->fill($request->validated());
+        $user->fill($request->safe()->except('current_password'));
 
         $emailChanged = $user->isDirty('email');
 
