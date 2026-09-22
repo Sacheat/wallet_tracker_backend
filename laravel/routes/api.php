@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/assets/{asset}/news', [AssetController::class, 'news']);
     Route::apiResource('platforms', PlatformController::class);
     Route::apiResource('portfolio-entries', PortfolioEntryController::class);
+    Route::post('/price-alerts/parse', [PriceAlertController::class, 'parse']);
     Route::apiResource('price-alerts', PriceAlertController::class);
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/notification-settings', [NotificationSettingsController::class, 'show']);

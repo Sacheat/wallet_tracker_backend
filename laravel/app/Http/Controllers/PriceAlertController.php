@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ParseAlertTextRequest;
 use App\Http\Requests\StorePriceAlertRequest;
 use App\Http\Requests\UpdatePriceAlertRequest;
 use App\Models\PriceAlert;
 use App\Models\User;
+use App\Services\AlertParserService;
 use App\Services\PriceService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -21,6 +23,26 @@ class PriceAlertController extends Controller
         return PriceAlert::with('asset')
             ->where('user_id', $request->user()->id)
             ->get();
+    }
+
+    /**
+     * Preview only — never creates anything. The frontend shows the parsed
+     * fields for confirmation, then calls store() with them like any other
+     * manually-filled form: this endpoint doesn't duplicate that validation
+     * or the threshold currency conversion, just resolves free text into
+     * the same shape the create form already produces.
+     */
+    public function parse(ParseAlertTextRequest $request, AlertParserService $alertParserService)
+    {
+        $result = $alertParserService->parse($request->validated('text'));
+
+        if (! $result['understood']) {
+            $status = $result['reason'] === 'unavailable' ? 503 : 422;
+
+            return response()->json(['message' => $result['message']], $status);
+        }
+
+        return response()->json($result);
     }
 
     public function store(StorePriceAlertRequest $request)
