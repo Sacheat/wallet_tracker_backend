@@ -21,7 +21,11 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/assets/{asset}/news', [AssetController::class, 'news']);
     Route::apiResource('platforms', PlatformController::class);
     Route::apiResource('portfolio-entries', PortfolioEntryController::class);
-    Route::post('/price-alerts/parse', [PriceAlertController::class, 'parse']);
+    // Own throttle on top of the global 60/min: this one calls Gemini
+    // (shared 500/day free-tier quota across every user), so a single
+    // account looping the form shouldn't be able to eat a disproportionate
+    // share of it.
+    Route::post('/price-alerts/parse', [PriceAlertController::class, 'parse'])->middleware('throttle:10,1');
     Route::apiResource('price-alerts', PriceAlertController::class);
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/notification-settings', [NotificationSettingsController::class, 'show']);
