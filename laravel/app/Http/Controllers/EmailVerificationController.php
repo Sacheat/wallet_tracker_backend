@@ -29,13 +29,7 @@ class EmailVerificationController extends Controller
             return response()->json(['message' => 'Email déjà vérifié.']);
         }
 
-        try {
-            $request->user()->sendEmailVerificationNotification();
-        } catch (\Throwable $e) {
-            report($e);
-
-            return response()->json(['message' => "Impossible d'envoyer l'email pour le moment."], 503);
-        }
+        $request->user()->sendEmailVerificationNotification();
 
         return response()->json(['message' => 'Email de vérification envoyé.']);
     }

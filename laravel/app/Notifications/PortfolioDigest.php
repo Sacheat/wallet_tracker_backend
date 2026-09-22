@@ -5,12 +5,14 @@ namespace App\Notifications;
 use App\DTO\PortfolioSummary;
 use App\Notifications\Channels\DiscordWebhookChannel;
 use App\Notifications\Concerns\FormatsNumbersForHumans;
+use App\Notifications\Concerns\QueuedWithRetries;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class PortfolioDigest extends Notification
+class PortfolioDigest extends Notification implements ShouldQueue
 {
-    use FormatsNumbersForHumans;
+    use FormatsNumbersForHumans, QueuedWithRetries;
 
     /**
      * @param  'daily'|'weekly'  $frequency

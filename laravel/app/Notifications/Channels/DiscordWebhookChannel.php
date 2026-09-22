@@ -4,10 +4,15 @@ namespace App\Notifications\Channels;
 
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class DiscordWebhookChannel
 {
+    /**
+     * Failures are deliberately not swallowed: every notification using this
+     * channel is queued, so an exception here fails only this channel's job,
+     * which the queue retries with backoff and finally records in
+     * failed_jobs — instead of being logged once and lost.
+     */
     public function send(object $notifiable, Notification $notification): void
     {
         $url = $notifiable->routeNotificationFor('discord', $notification);
@@ -20,11 +25,6 @@ class DiscordWebhookChannel
             return;
         }
 
-        try {
-            Http::post($url, ['content' => $notification->toDiscord($notifiable)])->throw();
-        } catch (\Exception $e) {
-            report($e);
-            Log::warning('Discord webhook delivery failed.', ['exception' => $e->getMessage()]);
-        }
+        Http::post($url, ['content' => $notification->toDiscord($notifiable)])->throw();
     }
 }

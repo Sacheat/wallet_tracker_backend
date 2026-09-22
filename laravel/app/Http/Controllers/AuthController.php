@@ -23,15 +23,9 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        // The account is already created and the user logged in; a broken
-        // mail provider or a rejected recipient must not turn that into a
-        // failed registration. They can always ask for the email again via
-        // POST /email/verification-notification.
-        try {
-            $user->sendEmailVerificationNotification();
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        // Queued: a broken mail provider or a rejected recipient fails the
+        // job (retried, then failed_jobs), never the registration itself.
+        $user->sendEmailVerificationNotification();
 
         return response()->json($user, 201);
     }

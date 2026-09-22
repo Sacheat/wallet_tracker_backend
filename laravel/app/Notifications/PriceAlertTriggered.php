@@ -6,12 +6,20 @@ use App\Enums\AlertType;
 use App\Models\PriceAlert;
 use App\Notifications\Channels\DiscordWebhookChannel;
 use App\Notifications\Concerns\FormatsNumbersForHumans;
+use App\Notifications\Concerns\QueuedWithRetries;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class PriceAlertTriggered extends Notification
+class PriceAlertTriggered extends Notification implements ShouldQueue
 {
-    use FormatsNumbersForHumans;
+    use FormatsNumbersForHumans, QueuedWithRetries;
+
+    /**
+     * The alert (or its user) may be deleted between dispatch and delivery;
+     * drop the job instead of failing it with ModelNotFoundException.
+     */
+    public bool $deleteWhenMissingModels = true;
 
     /**
      * @param  float  $currentValue  The current price (asset alerts) or portfolio total (portfolio alerts).

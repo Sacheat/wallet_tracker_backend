@@ -1,0 +1,15 @@
+[Unit]
+Description=Wallet Tracker - Laravel queue worker (notifications, verification/reset emails)
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Dev/wallet_tracker_backend/laravel
+# --max-time: the worker exits cleanly after an hour and Restart=always
+# brings it back, so it never runs on stale code or leaked memory for long.
+# After deploying new code, `php artisan queue:restart` does the same on demand.
+ExecStart=/bin/php artisan queue:work --sleep=3 --max-time=3600 --no-interaction
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
