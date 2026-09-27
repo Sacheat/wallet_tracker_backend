@@ -45,7 +45,10 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    // Cross-origin, the browser hides every response header outside the
+    // CORS-safelisted few unless listed here — the SPA couldn't read the
+    // throttle headers it's told to rely on (429 countdown, remaining budget).
+    'exposed_headers' => ['Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
 
     'max_age' => 0,
 
