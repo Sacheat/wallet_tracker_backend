@@ -59,6 +59,9 @@ class AppServiceProvider extends ServiceProvider
         // name, so each budget is independent.
         RateLimiter::for('catalog-writes', fn (Request $request) => Limit::perMinute(10)->by($request->user()->id));
         RateLimiter::for('ai-parse', fn (Request $request) => Limit::perMinute(10)->by($request->user()->id));
+        // The export walks every table tied to the account: heavier than
+        // any other read, and nobody needs it more than a few times.
+        RateLimiter::for('data-export', fn (Request $request) => Limit::perMinute(3)->by($request->user()->id));
 
         // Single source of truth for password strength: RegisterRequest,
         // UpdatePasswordRequest and ResetPasswordRequest all call

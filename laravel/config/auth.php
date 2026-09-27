@@ -41,6 +41,10 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+            // "Remember me" cookie lifetime, in minutes: 13 months (390
+            // days), the CNIL's usual ceiling for a tracker's lifetime.
+            // Laravel's default is 400 days.
+            'remember' => 60 * 24 * 390,
         ],
     ],
 

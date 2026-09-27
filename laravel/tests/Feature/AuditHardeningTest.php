@@ -58,4 +58,15 @@ class AuditHardeningTest extends TestCase
         $discord = (new UpdateNotificationSettingsRequest)->rules()['discord_webhook_url'];
         $this->assertTrue(Validator::make(['u' => 'https://discord.com/api/webhooks/'.str_repeat('a', 300)], ['u' => $discord])->fails());
     }
+
+    public function test_remember_me_lasts_thirteen_months_not_laravels_default(): void
+    {
+        $this->assertSame(60 * 24 * 390, config('auth.guards.web.remember'));
+    }
+
+    public function test_the_data_export_requires_a_session_and_is_rate_limited(): void
+    {
+        $this->getJson('/user/export')->assertUnauthorized();
+        $this->assertContains('throttle:data-export', app('router')->getRoutes()->getByAction('App\\Http\\Controllers\\DataExportController')->gatherMiddleware());
+    }
 }

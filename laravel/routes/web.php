@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvatarController;
+use App\Http\Controllers\DataExportController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
@@ -48,6 +49,9 @@ Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
 Route::middleware(['auth', AuthenticateSession::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
+    // GDPR portability. Not under /api: it must stay reachable while the
+    // email is unverified (the 'verified' middleware only guards /api/*).
+    Route::get('/user/export', DataExportController::class)->middleware('throttle:data-export');
     // Same cap as the resend route below: an email change sends a
     // verification mail to whatever address was typed.
     Route::patch('/user', [ProfileController::class, 'update'])->middleware('throttle:6,1');

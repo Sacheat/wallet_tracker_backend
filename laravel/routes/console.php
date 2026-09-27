@@ -17,3 +17,8 @@ Schedule::command('alerts:check')->hourly();
 
 Schedule::command('digest:send daily')->dailyAt('08:00');
 Schedule::command('digest:send weekly')->weeklyOn(1, '08:00');
+
+// Failed notification jobs keep their serialized payload (recipient,
+// alert, portfolio figures): 7 days is enough to investigate a delivery
+// problem, and it's the retention the privacy policy states.
+Schedule::command('queue:prune-failed --hours=168')->daily();
