@@ -19,7 +19,7 @@ class UpdateNotificationSettingsRequest extends FormRequest
     {
         return [
             'email_notifications_enabled' => 'sometimes|boolean',
-            'discord_webhook_url' => 'sometimes|nullable|url|starts_with:https://discord.com/api/webhooks/,https://discordapp.com/api/webhooks/',
+            'discord_webhook_url' => 'sometimes|nullable|url|max:255|starts_with:https://discord.com/api/webhooks/,https://discordapp.com/api/webhooks/',
             'daily_digest_enabled' => 'sometimes|boolean',
             'weekly_digest_enabled' => 'sometimes|boolean',
         ];

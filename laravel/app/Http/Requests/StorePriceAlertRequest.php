@@ -35,10 +35,13 @@ class StorePriceAlertRequest extends FormRequest
                 Rule::prohibitedIf($this->typeIn([AlertType::PortfolioTotalAbove, AlertType::PortfolioTotalBelow])),
                 'nullable', 'integer', 'exists:assets,id',
             ],
+            // Max: decimal(20,8) column, and the value is converted to USD
+            // before being stored (CHF→USD can grow it) — 1e11 keeps a
+            // margin under the 12 integer digits for any supported currency.
             'threshold' => [
                 Rule::requiredIf($this->typeIn($thresholdTypes)),
                 Rule::prohibitedIf($this->typeIn([AlertType::PercentChange])),
-                'nullable', 'numeric', 'gt:0',
+                'nullable', 'numeric', 'gt:0', 'max:100000000000',
             ],
             'percent_threshold' => [
                 Rule::requiredIf($this->typeIn([AlertType::PercentChange])),

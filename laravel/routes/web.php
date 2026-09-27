@@ -6,6 +6,7 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
 
 Route::get('/', function () {
     return view('welcome');
@@ -30,15 +31,21 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middl
 // than the JSON-oriented routes below, and 'signed' validates id/hash/
 // expires/signature instead of a request body.
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-    ->middleware(['auth', 'signed', 'throttle:6,1'])
+    ->middleware(['auth', AuthenticateSession::class, 'signed', 'throttle:6,1'])
     ->name('verification.verify');
 // See EmailVerificationController::notice() — must resolve to something or
 // EnsureEmailIsVerified crashes on a non-JSON request, same as 'login'.
 Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
-    ->middleware('auth')
+    ->middleware(['auth', AuthenticateSession::class])
     ->name('verification.notice');
 
-Route::middleware('auth')->group(function () {
+// AuthenticateSession: the same check Sanctum already runs on /api/*
+// (sanctum.middleware.authenticate_session). It stores a hash of the
+// password in the session and kills any session whose hash no longer
+// matches — without it here, a session opened before a password change or
+// reset kept working on these routes (read the profile, rename, upload an
+// avatar) as long as it avoided /api/*. Found in a security audit.
+Route::middleware(['auth', AuthenticateSession::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
     // Same cap as the resend route below: an email change sends a

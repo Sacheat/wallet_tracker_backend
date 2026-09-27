@@ -18,7 +18,9 @@ class UpdatePortfolioEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quantity' => 'required|numeric|gt:0',
+            // Column is decimal(20,8): 12 integer digits. Past that, MySQL
+            // rejects the write and the client got a bare 500.
+            'quantity' => 'required|numeric|gt:0|max:999999999999',
         ];
     }
 }

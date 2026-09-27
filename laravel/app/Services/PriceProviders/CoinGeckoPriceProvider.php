@@ -148,7 +148,8 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
 
         $info = Cache::remember($cacheKey, 3600, function () use ($externalId, $empty) {
             try {
-                $response = Http::get("https://api.coingecko.com/api/v3/coins/{$externalId}", [
+                // external_id is user-supplied and lands in the path.
+                $response = Http::get('https://api.coingecko.com/api/v3/coins/'.rawurlencode($externalId), [
                     'localization' => 'true',
                     'tickers' => 'false',
                     'community_data' => 'false',

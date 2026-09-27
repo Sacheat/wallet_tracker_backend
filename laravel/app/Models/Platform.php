@@ -15,8 +15,20 @@ class Platform extends Model
         'name',
     ];
 
+    protected $casts = [
+        'created_by' => 'integer',
+    ];
+
+    // See Asset: server-managed, only feeds CatalogPolicy.
+    protected $hidden = ['created_by'];
+
     public function portfolioEntries(): HasMany
     {
         return $this->hasMany(PortfolioEntry::class);
+    }
+
+    public function isUsedByOtherUserThan(User $user): bool
+    {
+        return $this->portfolioEntries()->where('user_id', '!=', $user->id)->exists();
     }
 }

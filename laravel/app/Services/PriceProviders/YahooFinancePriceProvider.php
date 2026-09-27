@@ -89,10 +89,19 @@ class YahooFinancePriceProvider implements PercentChangeProviderInterface, Price
         $cacheKey = "yahoo_finance_chart_{$symbol}";
         $backupKey = "{$cacheKey}_backup";
 
-        return Cache::remember($cacheKey, 900, function () use ($symbol, $backupKey) {
+        // false = cached "no price for this symbol". Cache::remember() treats
+        // a stored null as a miss (see GeminiSummaryService), so returning
+        // null here re-queried Yahoo on every read: a portfolio full of bogus
+        // tickers turned each GET /api/portfolio into one outbound call per
+        // ticker — enough to get this server's IP throttled by Yahoo, and
+        // stock/ETF/gold prices with it, for every user.
+        $chart = Cache::remember($cacheKey, 900, function () use ($symbol, $backupKey) {
             try {
+                // rawurlencode: external_id is user-supplied and lands in the
+                // path — without it, '../' or '?' could reach other Yahoo
+                // endpoints. Checked live: Yahoo accepts GC%3DF, %5EGSPC.
                 $response = Http::withHeaders(['User-Agent' => 'Mozilla/5.0'])
-                    ->get("https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}", [
+                    ->get('https://query1.finance.yahoo.com/v8/finance/chart/'.rawurlencode($symbol), [
                         'interval' => '60m',
                         'range' => '8d',
                     ]);
@@ -121,8 +130,10 @@ class YahooFinancePriceProvider implements PercentChangeProviderInterface, Price
 
                 report($e);
 
-                return null;
+                return false;
             }
         });
+
+        return $chart ?: null;
     }
 }

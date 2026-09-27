@@ -16,13 +16,16 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Must come before apiResource: otherwise GET /assets/search is caught
     // by GET /assets/{asset} and Laravel tries to route-model-bind "search".
     Route::get('/assets/search', [AssetController::class, 'search']);
-    Route::apiResource('assets', AssetController::class);
+    Route::apiResource('assets', AssetController::class)->except('store');
     Route::get('/assets/{asset}/details', [AssetController::class, 'details']);
     Route::get('/assets/{asset}/news', [AssetController::class, 'news']);
-    Route::apiResource('platforms', PlatformController::class);
-    // Multipart upload (field 'logo'), see LogoStorage. Own throttle: the
-    // catalog is shared, so these write files every user will download.
-    Route::middleware('throttle:10,1')->group(function () {
+    Route::apiResource('platforms', PlatformController::class)->except('store');
+    // Own throttle on everything that writes to the shared catalog: without
+    // it, one account could flood it with entries (and logo files) at the
+    // global 60/min. Logos: multipart upload (field 'logo'), see LogoStorage.
+    Route::middleware('throttle:catalog-writes')->group(function () {
+        Route::post('/assets', [AssetController::class, 'store']);
+        Route::post('/platforms', [PlatformController::class, 'store']);
         Route::post('/assets/{asset}/logo', [AssetController::class, 'storeLogo']);
         Route::delete('/assets/{asset}/logo', [AssetController::class, 'destroyLogo']);
         Route::post('/platforms/{platform}/logo', [PlatformController::class, 'storeLogo']);
@@ -33,7 +36,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // (shared 500/day free-tier quota across every user), so a single
     // account looping the form shouldn't be able to eat a disproportionate
     // share of it.
-    Route::post('/price-alerts/parse', [PriceAlertController::class, 'parse'])->middleware('throttle:10,1');
+    Route::post('/price-alerts/parse', [PriceAlertController::class, 'parse'])->middleware('throttle:ai-parse');
     Route::apiResource('price-alerts', PriceAlertController::class);
     Route::get('/audit-logs', [AuditLogController::class, 'index']);
     Route::get('/notification-settings', [NotificationSettingsController::class, 'show']);

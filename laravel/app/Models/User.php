@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Storage;
     'weekly_digest_enabled',
     'currency',
 ])]
+// is_admin is excluded too, and never settable through the API at all:
+// only the user:admin artisan command grants it.
 // avatar_path and onboarding_completed_at are deliberately excluded from
 // Fillable: the client sends a boolean intent (avatar file, or
 // onboarding_completed: true), never the resulting value directly —
@@ -55,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'daily_digest_enabled' => 'boolean',
             'weekly_digest_enabled' => 'boolean',
             'currency' => Currency::class,
+            'is_admin' => 'boolean',
         ];
     }
 

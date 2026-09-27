@@ -39,7 +39,10 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
     {
         $channels = [];
 
-        if ($notifiable->email_notifications_enabled) {
+        // Only to a verified address: an email change un-verifies the
+        // account but its alerts and digests kept running, so anyone could
+        // point them at a stranger's inbox (and burn our sender reputation).
+        if ($notifiable->email_notifications_enabled && $notifiable->hasVerifiedEmail()) {
             $channels[] = 'mail';
         }
 

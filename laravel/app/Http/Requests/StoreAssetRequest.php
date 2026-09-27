@@ -28,7 +28,10 @@ class StoreAssetRequest extends FormRequest
             'name' => 'required|string|max:255',
             'symbol' => 'required|string|max:10|unique:assets,symbol',
             'type' => ['required', Rule::enum(AssetType::class)],
-            'external_id' => 'nullable|string|max:255|unique:assets,external_id',
+            // Provider identifiers only use these characters (CoinGecko ids:
+            // bitcoin, usd-coin; Yahoo tickers: GC=F, ^GSPC, BRK-B, 0700.HK).
+            // It ends up in outbound request paths, so nothing else gets in.
+            'external_id' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9._=^-]+$/', 'unique:assets,external_id'],
             // Logos go through POST /{resource}/{id}/logo (LogoStorage);
             // 'prohibited' makes a client still sending a URL fail loudly
             // instead of having it silently dropped (null is still accepted).

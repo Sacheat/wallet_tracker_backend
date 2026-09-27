@@ -9,10 +9,13 @@ use App\Services\AssetDetailService;
 use App\Services\AssetSearchService;
 use App\Services\LogoStorage;
 use App\Services\NewsService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class AssetController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index()
     {
         return Asset::all();
@@ -41,7 +44,13 @@ class AssetController extends Controller
 
     public function store(StoreAssetRequest $request)
     {
-        return Asset::create($request->validated());
+        $asset = new Asset($request->validated());
+        // Server-side only (not fillable): what CatalogPolicy checks to let
+        // the creator keep editing until another user relies on the entry.
+        $asset->created_by = $request->user()->id;
+        $asset->save();
+
+        return $asset;
     }
 
     public function show(Asset $asset)
@@ -51,6 +60,8 @@ class AssetController extends Controller
 
     public function update(UpdateAssetRequest $request, Asset $asset)
     {
+        $this->authorize('update', $asset);
+
         $asset->update($request->validated());
 
         return $asset;
@@ -58,6 +69,7 @@ class AssetController extends Controller
 
     public function storeLogo(Request $request, Asset $asset, LogoStorage $logoStorage)
     {
+        $this->authorize('update', $asset);
         $request->validate(['logo' => LogoStorage::RULES]);
 
         return $logoStorage->replace($asset, $request->file('logo'));
@@ -65,6 +77,8 @@ class AssetController extends Controller
 
     public function destroyLogo(Asset $asset, LogoStorage $logoStorage)
     {
+        $this->authorize('update', $asset);
+
         $logoStorage->remove($asset);
 
         return response()->noContent();
@@ -72,6 +86,11 @@ class AssetController extends Controller
 
     public function destroy(Asset $asset)
     {
+        // Policy first (who may delete), then the 409 below (whether it
+        // can be deleted at all): even an admin can't pull an entry out
+        // from under a portfolio.
+        $this->authorize('delete', $asset);
+
         if ($asset->portfolioEntries()->exists() || $asset->priceAlerts()->exists()) {
             return response()->json([
                 'message' => 'Cet actif est utilisé dans au moins un portefeuille ou une alerte (potentiellement d\'un autre utilisateur) et ne peut pas être supprimé.',
