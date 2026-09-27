@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePlatformRequest;
 use App\Http\Requests\UpdatePlatformRequest;
 use App\Models\Platform;
+use App\Services\LogoStorage;
+use Illuminate\Http\Request;
 
 class PlatformController extends Controller
 {
@@ -28,6 +30,20 @@ class PlatformController extends Controller
         $platform->update($request->validated());
 
         return $platform;
+    }
+
+    public function storeLogo(Request $request, Platform $platform, LogoStorage $logoStorage)
+    {
+        $request->validate(['logo' => LogoStorage::RULES]);
+
+        return $logoStorage->replace($platform, $request->file('logo'));
+    }
+
+    public function destroyLogo(Platform $platform, LogoStorage $logoStorage)
+    {
+        $logoStorage->remove($platform);
+
+        return response()->noContent();
     }
 
     public function destroy(Platform $platform)

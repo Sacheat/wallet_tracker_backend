@@ -4,18 +4,18 @@ namespace App\Models;
 
 use App\Enums\AssetType;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasLogo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Asset extends Model
 {
-    use Auditable;
+    use Auditable, HasLogo;
 
     protected $fillable = [
         'name',
         'symbol',
         'type',
-        'logo_url',
         'external_id',
     ];
 

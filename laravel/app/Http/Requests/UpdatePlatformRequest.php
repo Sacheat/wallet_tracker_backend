@@ -20,7 +20,10 @@ class UpdatePlatformRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255', Rule::unique('platforms', 'name')->ignore($this->route('platform'))],
-            'logo_url' => 'nullable|url',
+            // Logos go through POST /{resource}/{id}/logo (LogoStorage);
+            // 'prohibited' makes a client still sending a URL fail loudly
+            // instead of having it silently dropped (null is still accepted).
+            'logo_url' => 'prohibited',
         ];
     }
 }

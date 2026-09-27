@@ -19,7 +19,10 @@ class StorePlatformRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255|unique:platforms,name',
-            'logo_url' => 'nullable|url',
+            // Logos go through POST /{resource}/{id}/logo (LogoStorage);
+            // 'prohibited' makes a client still sending a URL fail loudly
+            // instead of having it silently dropped (null is still accepted).
+            'logo_url' => 'prohibited',
         ];
     }
 }

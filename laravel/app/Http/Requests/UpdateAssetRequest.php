@@ -23,7 +23,10 @@ class UpdateAssetRequest extends FormRequest
             'symbol' => ['sometimes', 'string', 'max:10', Rule::unique('assets', 'symbol')->ignore($this->route('asset'))],
             'type' => ['sometimes', Rule::enum(AssetType::class)],
             'external_id' => ['nullable', 'string', 'max:255', Rule::unique('assets', 'external_id')->ignore($this->route('asset'))],
-            'logo_url' => 'nullable|url',
+            // Logos go through POST /{resource}/{id}/logo (LogoStorage);
+            // 'prohibited' makes a client still sending a URL fail loudly
+            // instead of having it silently dropped (null is still accepted).
+            'logo_url' => 'prohibited',
         ];
     }
 }

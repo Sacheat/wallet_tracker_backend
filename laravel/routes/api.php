@@ -20,6 +20,14 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/assets/{asset}/details', [AssetController::class, 'details']);
     Route::get('/assets/{asset}/news', [AssetController::class, 'news']);
     Route::apiResource('platforms', PlatformController::class);
+    // Multipart upload (field 'logo'), see LogoStorage. Own throttle: the
+    // catalog is shared, so these write files every user will download.
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/assets/{asset}/logo', [AssetController::class, 'storeLogo']);
+        Route::delete('/assets/{asset}/logo', [AssetController::class, 'destroyLogo']);
+        Route::post('/platforms/{platform}/logo', [PlatformController::class, 'storeLogo']);
+        Route::delete('/platforms/{platform}/logo', [PlatformController::class, 'destroyLogo']);
+    });
     Route::apiResource('portfolio-entries', PortfolioEntryController::class);
     // Own throttle on top of the global 60/min: this one calls Gemini
     // (shared 500/day free-tier quota across every user), so a single

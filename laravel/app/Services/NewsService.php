@@ -35,7 +35,25 @@ class NewsService
     {
         $provider = $this->providers[$asset->type?->value] ?? null;
 
-        return $provider ? $provider->getNews($asset) : [];
+        if (! $provider) {
+            return [];
+        }
+
+        // Filtered here rather than in each provider so a future provider
+        // can't forget it: the URL comes from a third-party feed and ends
+        // up in an <a href>, so a 'javascript:' or 'data:' URL would be
+        // an XSS vector on the frontend.
+        return array_values(array_filter(
+            $provider->getNews($asset),
+            fn (array $item) => self::isHttpUrl($item['url'] ?? null),
+        ));
+    }
+
+    private static function isHttpUrl(mixed $url): bool
+    {
+        return is_string($url)
+            && filter_var($url, FILTER_VALIDATE_URL) !== false
+            && in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true);
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateAssetRequest;
 use App\Models\Asset;
 use App\Services\AssetDetailService;
 use App\Services\AssetSearchService;
+use App\Services\LogoStorage;
 use App\Services\NewsService;
 use Illuminate\Http\Request;
 
@@ -53,6 +54,20 @@ class AssetController extends Controller
         $asset->update($request->validated());
 
         return $asset;
+    }
+
+    public function storeLogo(Request $request, Asset $asset, LogoStorage $logoStorage)
+    {
+        $request->validate(['logo' => LogoStorage::RULES]);
+
+        return $logoStorage->replace($asset, $request->file('logo'));
+    }
+
+    public function destroyLogo(Asset $asset, LogoStorage $logoStorage)
+    {
+        $logoStorage->remove($asset);
+
+        return response()->noContent();
     }
 
     public function destroy(Asset $asset)

@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Middleware\PreventBrowserCaching;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,9 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->throttleApi();
+        $middleware->append(PreventBrowserCaching::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
-        );
+        // Always JSON, even without 'Accept: application/json': this app
+        // has no HTML pages, so the default 302 to route('login') (a
+        // POST-only route) led nowhere — an unauthenticated GET /user
+        // now gets a plain 401, same as the SPA already sees.
+        $exceptions->shouldRenderJsonWhen(fn () => true);
     })->create();

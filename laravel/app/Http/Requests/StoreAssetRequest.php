@@ -29,7 +29,10 @@ class StoreAssetRequest extends FormRequest
             'symbol' => 'required|string|max:10|unique:assets,symbol',
             'type' => ['required', Rule::enum(AssetType::class)],
             'external_id' => 'nullable|string|max:255|unique:assets,external_id',
-            'logo_url' => 'nullable|url',
+            // Logos go through POST /{resource}/{id}/logo (LogoStorage);
+            // 'prohibited' makes a client still sending a URL fail loudly
+            // instead of having it silently dropped (null is still accepted).
+            'logo_url' => 'prohibited',
         ];
     }
 }
