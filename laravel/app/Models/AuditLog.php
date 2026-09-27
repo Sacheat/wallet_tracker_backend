@@ -13,6 +13,7 @@ class AuditLog extends Model
         'auditable_type',
         'auditable_id',
         'action',
+        'source',
         'changes',
     ];
 

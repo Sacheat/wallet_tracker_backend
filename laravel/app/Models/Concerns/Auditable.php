@@ -36,6 +36,9 @@ trait Auditable
             'auditable_type' => static::class,
             'auditable_id' => $this->getKey(),
             'action' => $action,
+            // Tells a deleted account (web, user_id nulled later) apart
+            // from a system action (console, no user) once user_id is null.
+            'source' => app()->runningInConsole() ? 'console' : 'web',
             'changes' => collect($attributes)->except(['created_at', 'updated_at'])->all(),
         ]);
     }
