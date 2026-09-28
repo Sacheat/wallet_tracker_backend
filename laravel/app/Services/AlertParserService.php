@@ -43,13 +43,11 @@ class AlertParserService
      */
     public function parse(string $text): array
     {
-        $apiKey = config('services.gemini.key');
-
-        if (empty($apiKey)) {
+        if (empty(config('services.gemini.key'))) {
             return $this->unavailable();
         }
 
-        $extracted = $this->extract($text, $apiKey);
+        $extracted = $this->extract($text);
 
         if ($extracted === null) {
             return $this->unavailable();
@@ -124,15 +122,18 @@ class AlertParserService
      *
      * @return array<string, mixed>|null
      */
-    private function extract(string $text, string $apiKey): ?array
+    private function extract(string $text): ?array
     {
         $prompt = "Analyse cette demande de création d'alerte de prix et extrait les informations dans le format demandé.\n\n".
             "Demande de l'utilisateur : \"{$text}\"";
 
         for ($attempt = 0; $attempt < 2; $attempt++) {
             try {
-                $response = Http::timeout(15)->post(
-                    'https://generativelanguage.googleapis.com/v1beta/models/'.self::MODEL.":generateContent?key={$apiKey}",
+                // Key in a header, not ?key= or a method argument: a
+                // connection error logs the full URL, and a stack trace
+                // logs (truncated) arguments.
+                $response = Http::timeout(15)->withHeaders(['x-goog-api-key' => config('services.gemini.key')])->post(
+                    'https://generativelanguage.googleapis.com/v1beta/models/'.self::MODEL.':generateContent',
                     [
                         'contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
                         'generationConfig' => [

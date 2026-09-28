@@ -27,11 +27,12 @@ class CryptoCompareNewsProvider implements NewsProviderInterface
 
         return Cache::remember("news_{$asset->symbol}", 1800, function () use ($asset, $apiKey) {
             try {
-                $response = Http::get('https://min-api.cryptocompare.com/data/v2/news/', [
-                    'lang' => 'EN',
-                    'categories' => $asset->symbol,
-                    'api_key' => $apiKey,
-                ]);
+                // Header rather than ?api_key=: a connection error logs the URL.
+                $response = Http::withHeaders(['authorization' => "Apikey {$apiKey}"])
+                    ->get('https://min-api.cryptocompare.com/data/v2/news/', [
+                        'lang' => 'EN',
+                        'categories' => $asset->symbol,
+                    ]);
                 $response->throw();
 
                 return collect($response->json('Data'))

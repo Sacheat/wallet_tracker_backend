@@ -43,12 +43,13 @@ class MarketauxNewsProvider implements NewsProviderInterface
         // catalog grows past its current handful of stock/ETF symbols.
         return Cache::remember("news_marketaux_{$asset->symbol}", 10800, function () use ($asset, $apiKey, $entityType) {
             try {
-                $response = Http::timeout(10)->get('https://api.marketaux.com/v1/news/all', [
+                // Bearer header rather than ?api_token= (accepted too, confirmed
+                // live 2026-09-28): a connection error logs the URL.
+                $response = Http::timeout(10)->withToken($apiKey)->get('https://api.marketaux.com/v1/news/all', [
                     'symbols' => $asset->symbol,
                     'entity_types' => $entityType,
                     'language' => 'fr',
                     'limit' => 5,
-                    'api_token' => $apiKey,
                 ]);
                 $response->throw();
 

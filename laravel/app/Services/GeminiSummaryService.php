@@ -51,8 +51,9 @@ class GeminiSummaryService
         // instead, translated back to null below.
         $cached = Cache::remember($cacheKey, 3600, function () use ($summary, $frequency, $apiKey) {
             try {
-                $response = Http::timeout(20)->post(
-                    'https://generativelanguage.googleapis.com/v1beta/models/'.self::MODEL.":generateContent?key={$apiKey}",
+                // Header rather than ?key=: a connection error logs the URL.
+                $response = Http::timeout(20)->withHeaders(['x-goog-api-key' => $apiKey])->post(
+                    'https://generativelanguage.googleapis.com/v1beta/models/'.self::MODEL.':generateContent',
                     [
                         'contents' => [
                             ['role' => 'user', 'parts' => [['text' => $this->buildPrompt($summary, $frequency)]]],

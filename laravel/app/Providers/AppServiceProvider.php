@@ -32,7 +32,12 @@ class AppServiceProvider extends ServiceProvider
         // Guzzle's default is no timeout at all: one hung provider would pin
         // a PHP worker indefinitely (free hosting often has a single one).
         // Calls that need longer (Gemini) still set their own ->timeout().
-        Http::globalOptions(['timeout' => 10, 'connect_timeout' => 5]);
+        //
+        // IPv4 only: alwaysdata egresses over IPv6 by default, and Google
+        // rejects that address outright (403, "User location is not
+        // supported" — confirmed live 2026-09-28) while the IPv4 one is
+        // accepted. Every provider used here was checked to serve IPv4.
+        Http::globalOptions(['timeout' => 10, 'connect_timeout' => 5, 'force_ip_resolve' => 'v4']);
 
         // One policy for both halves of the shared catalog: same ownership
         // rules, and auto-discovery would look for AssetPolicy/PlatformPolicy.

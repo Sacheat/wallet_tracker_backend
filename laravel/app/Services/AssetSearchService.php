@@ -20,13 +20,30 @@ class AssetSearchService
      */
     public function search(string $query): array
     {
-        return Cache::remember('asset_search_'.md5(strtolower($query)), 300, fn () => [
-            ...$this->searchCrypto($query),
-            ...$this->searchStocksAndEtfs($query),
-        ]);
+        $cacheKey = 'asset_search_'.md5(strtolower($query));
+
+        if (($cached = Cache::get($cacheKey)) !== null) {
+            return $cached;
+        }
+
+        $crypto = $this->searchCrypto($query);
+        $stocksAndEtfs = $this->searchStocksAndEtfs($query);
+        $results = [...$crypto ?? [], ...$stocksAndEtfs ?? []];
+
+        // A provider failure (CoinGecko 429s the shared hosting IP now and
+        // then) still returns what the other found, but isn't cached: one
+        // bad moment would otherwise hide that half for the whole TTL.
+        if ($crypto !== null && $stocksAndEtfs !== null) {
+            Cache::put($cacheKey, $results, 300);
+        }
+
+        return $results;
     }
 
-    private function searchCrypto(string $query): array
+    /**
+     * @return array<int, array{external_id: string, name: string, symbol: string, type: string}>|null null when the provider failed
+     */
+    private function searchCrypto(string $query): ?array
     {
         try {
             $response = Http::get('https://api.coingecko.com/api/v3/search', ['query' => $query]);
@@ -45,11 +62,14 @@ class AssetSearchService
         } catch (\Exception $e) {
             report($e);
 
-            return [];
+            return null;
         }
     }
 
-    private function searchStocksAndEtfs(string $query): array
+    /**
+     * @return array<int, array{external_id: string, name: string, symbol: string, type: string}>|null null when the provider failed
+     */
+    private function searchStocksAndEtfs(string $query): ?array
     {
         $typeByQuoteType = [
             'EQUITY' => AssetType::Stock->value,
@@ -78,7 +98,7 @@ class AssetSearchService
         } catch (\Exception $e) {
             report($e);
 
-            return [];
+            return null;
         }
     }
 }
