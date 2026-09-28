@@ -32,7 +32,7 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middl
 // than the JSON-oriented routes below, and 'signed' validates id/hash/
 // expires/signature instead of a request body.
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-    ->middleware(['auth', AuthenticateSession::class, 'signed', 'throttle:6,1'])
+    ->middleware(['auth', AuthenticateSession::class, 'signed:relative', 'throttle:6,1'])
     ->name('verification.verify');
 // See EmailVerificationController::notice() — must resolve to something or
 // EnsureEmailIsVerified crashes on a non-JSON request, same as 'login'.
