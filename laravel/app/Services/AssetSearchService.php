@@ -46,7 +46,7 @@ class AssetSearchService
     private function searchCrypto(string $query): ?array
     {
         try {
-            $response = Http::get('https://api.coingecko.com/api/v3/search', ['query' => $query]);
+            $response = Http::coingecko()->get('search', ['query' => $query]);
             $response->throw();
 
             return collect(data_get($response->json(), 'coins', []))

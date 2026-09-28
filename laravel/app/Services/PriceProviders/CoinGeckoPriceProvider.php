@@ -96,7 +96,7 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
             $rows = null;
 
             try {
-                $response = Http::get('https://api.coingecko.com/api/v3/coins/markets', [
+                $response = Http::coingecko()->get('coins/markets', [
                     'vs_currency' => 'usd',
                     'ids' => implode(',', $chunk),
                     'per_page' => self::MAX_IDS_PER_REQUEST,
@@ -149,7 +149,7 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
         $info = Cache::remember($cacheKey, 3600, function () use ($externalId, $empty) {
             try {
                 // external_id is user-supplied and lands in the path.
-                $response = Http::get('https://api.coingecko.com/api/v3/coins/'.rawurlencode($externalId), [
+                $response = Http::coingecko()->get('coins/'.rawurlencode($externalId), [
                     'localization' => 'true',
                     'tickers' => 'false',
                     'community_data' => 'false',

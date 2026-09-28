@@ -35,6 +35,12 @@ return [
         ],
     ],
 
+    'coingecko' => [
+        // Optional free "Demo" key: without it requests are keyless and
+        // share the rate limit of the hosting IP with its other tenants.
+        'key' => env('COINGECKO_API_KEY'),
+    ],
+
     'cryptocompare' => [
         'key' => env('CRYPTOCOMPARE_API_KEY'),
     ],

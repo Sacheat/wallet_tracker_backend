@@ -39,6 +39,12 @@ class AppServiceProvider extends ServiceProvider
         // accepted. Every provider used here was checked to serve IPv4.
         Http::globalOptions(['timeout' => 10, 'connect_timeout' => 5, 'force_ip_resolve' => 'v4']);
 
+        // Every CoinGecko call site goes through this, so the optional Demo
+        // key (same host, own quota instead of the shared hosting IP's) is
+        // attached in one place — as a header, never in the URL.
+        Http::macro('coingecko', fn () => Http::baseUrl('https://api.coingecko.com/api/v3')
+            ->withHeaders(array_filter(['x-cg-demo-api-key' => config('services.coingecko.key')])));
+
         // One policy for both halves of the shared catalog: same ownership
         // rules, and auto-discovery would look for AssetPolicy/PlatformPolicy.
         Gate::policy(Asset::class, CatalogPolicy::class);

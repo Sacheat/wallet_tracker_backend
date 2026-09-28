@@ -85,4 +85,25 @@ class OutboundHttpTest extends TestCase
         $this->assertSame('bitcoin', $service->search('bitcoin')[0]['external_id']);
         $this->assertTrue(Cache::has('asset_search_'.md5('bitcoin')));
     }
+
+    public function test_coingecko_demo_key_is_sent_as_a_header_when_configured(): void
+    {
+        config(['services.coingecko.key' => 'secret-key']);
+        Http::fake(['api.coingecko.com/*' => Http::response(['coins' => []])]);
+
+        Http::coingecko()->get('search', ['query' => 'bitcoin']);
+
+        $this->assertKeyOnlyInHeader('x-cg-demo-api-key', 'secret-key');
+    }
+
+    public function test_coingecko_stays_keyless_without_a_configured_key(): void
+    {
+        config(['services.coingecko.key' => null]);
+        Http::fake(['api.coingecko.com/*' => Http::response(['coins' => []])]);
+
+        Http::coingecko()->get('search', ['query' => 'bitcoin']);
+
+        Http::assertSent(fn (Request $request) => $request->url() === 'https://api.coingecko.com/api/v3/search?query=bitcoin'
+            && ! $request->hasHeader('x-cg-demo-api-key'));
+    }
 }
