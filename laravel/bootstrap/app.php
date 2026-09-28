@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Middleware\PreventBrowserCaching;
+use App\Http\Middleware\TrustVercelProxy;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\TrustProxies;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->throttleApi();
         $middleware->append(PreventBrowserCaching::class);
+        $middleware->replace(TrustProxies::class, TrustVercelProxy::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Always JSON, even without 'Accept: application/json': this app

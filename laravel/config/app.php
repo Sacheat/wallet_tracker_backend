@@ -55,6 +55,14 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Shared secret the Vercel proxy adds as X-Proxy-Secret on every
+    | forwarded request (see App\Http\Middleware\TrustVercelProxy). Set in
+    | production only: when set, requests without it are rejected.
+    */
+
+    'proxy_secret' => env('PROXY_SECRET'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
