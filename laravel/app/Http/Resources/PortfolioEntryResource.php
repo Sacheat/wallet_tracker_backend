@@ -15,12 +15,15 @@ class PortfolioEntryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'asset' => $this->asset->name,
             'asset_type' => $this->asset->type->value,
             'platform' => $this->platform->name,
             'quantity' => $this->quantity,
             'value_usd' => $this->value_usd,
             'value_eur' => $this->value_eur,
+            // Keyed by currency; null while a trade of this position has no price.
+            'performance' => $this->performance,
         ];
     }
 }

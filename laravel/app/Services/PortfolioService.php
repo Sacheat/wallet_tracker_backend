@@ -17,11 +17,16 @@ class PortfolioService
     public function __construct(
         private PriceService $priceService,
         private PriceChangeCalculator $priceChangeCalculator,
+        private PerformanceCalculator $performanceCalculator,
     ) {}
 
     public function getPortfolioSummary(User $user): PortfolioSummary
     {
-        $entries = PortfolioEntry::with(['asset', 'platform'])
+        $entries = PortfolioEntry::with([
+            'asset',
+            'platform',
+            'transactions' => fn ($query) => $query->orderBy('executed_at')->orderBy('id'),
+        ])
             ->where('user_id', $user->id)
             ->get();
         $prices = $this->priceService->getUsdPrices($entries->pluck('asset'));
@@ -29,13 +34,14 @@ class PortfolioService
         $eurRate = $rates['EUR'];
         $changePercent = $this->priceChangeCalculator->portfolioPercentChanges($entries, $prices);
 
-        $enrichedEntries = $entries->map(function (PortfolioEntry $entry) use ($prices, $eurRate) {
+        $enrichedEntries = $entries->map(function (PortfolioEntry $entry) use ($prices, $eurRate, $rates) {
             $priceUsd = $prices[$entry->asset->external_id] ?? 0;
             $valueUsd = $entry->quantity * $priceUsd;
             $valueEur = $valueUsd * $eurRate;
 
             $entry->value_usd = round($valueUsd, 2);
             $entry->value_eur = round($valueEur, 2);
+            $entry->performance = $this->performanceCalculator->forPosition($entry->transactions, $valueUsd, $rates);
 
             return $entry;
         });
@@ -56,6 +62,8 @@ class PortfolioService
             totalValueEur: $totalValueEur,
             changePercent: $changePercent,
             totalValueByCurrency: $totalValueByCurrency,
+            performance: $this->performanceCalculator->total($sortedEntries->pluck('performance')),
+            positionsWithoutPrice: $sortedEntries->whereNull('performance')->count(),
         );
     }
 }

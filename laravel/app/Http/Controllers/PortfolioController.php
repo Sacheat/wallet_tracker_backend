@@ -22,6 +22,8 @@ class PortfolioController extends Controller
             'total_value_eur' => $summary->totalValueEur,
             'change_percent' => $summary->changePercent,
             'total_value_by_currency' => $summary->totalValueByCurrency,
+            'performance' => $summary->performance,
+            'positions_without_price' => $summary->positionsWithoutPrice,
         ]);
     }
 
