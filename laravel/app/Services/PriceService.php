@@ -8,6 +8,7 @@ use App\Models\Asset;
 use App\Services\PriceProviders\CoinGeckoPriceProvider;
 use App\Services\PriceProviders\PriceProviderInterface;
 use App\Services\PriceProviders\YahooFinancePriceProvider;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -86,6 +87,51 @@ class PriceService
         $rate = $this->getUsdToCurrencyRates([$currency->value])[$currency->value];
 
         return round($amount / $rate, 8);
+    }
+
+    /**
+     * USD→EUR/GBP/CHF on a given past day, for pricing a trade at the rate
+     * of its own date. A past day's rates never change, so they are cached
+     * for good; today's are refreshed hourly. Frankfurter's v2 `quotes`
+     * filter does work (checked live 2026-11-08), unlike `symbols`; its
+     * EUR history starts on 1999-01-04, which callers enforce.
+     *
+     * @return array<string, float> Keyed by currency code, USD excluded.
+     *
+     * @throws \RuntimeException When Frankfurter can't be reached or lacks a rate.
+     */
+    public function getHistoricalUsdRates(CarbonInterface $date): array
+    {
+        $day = $date->copy()->utc()->toDateString();
+        $quotes = collect(Currency::cases())
+            ->reject(fn (Currency $currency) => $currency === Currency::Usd)
+            ->map(fn (Currency $currency) => $currency->value)
+            ->values();
+
+        $fetch = function () use ($day, $quotes) {
+            try {
+                $response = Http::get('https://api.frankfurter.dev/v2/rates', [
+                    'base' => 'USD',
+                    'date' => $day,
+                    'quotes' => $quotes->implode(','),
+                ])->throw();
+            } catch (\Exception $e) {
+                throw new \RuntimeException("Taux de change du {$day} indisponibles", 0, $e);
+            }
+
+            $rates = collect($response->json())->pluck('rate', 'quote')->map(fn ($rate) => (float) $rate);
+            if ($quotes->diff($rates->keys())->isNotEmpty()) {
+                throw new \RuntimeException("Taux de change du {$day} incomplets");
+            }
+
+            return $rates->only($quotes)->all();
+        };
+
+        $key = "usd_exchange_rates_on_{$day}";
+
+        return $day === now()->utc()->toDateString()
+            ? Cache::remember($key, 3600, $fetch)
+            : Cache::rememberForever($key, $fetch);
     }
 
     /**

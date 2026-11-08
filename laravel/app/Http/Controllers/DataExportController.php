@@ -32,12 +32,21 @@ class DataExportController extends Controller
                 'email_notifications_enabled', 'discord_webhook_url',
                 'daily_digest_enabled', 'weekly_digest_enabled',
             ]),
-            'portfolio_entries' => $user->portfolioEntries()->with(['asset', 'platform'])->get()
+            'portfolio_entries' => $user->portfolioEntries()->with(['asset', 'platform', 'transactions'])->get()
                 ->map(fn ($entry) => [
                     'asset' => $entry->asset->name,
                     'asset_symbol' => $entry->asset->symbol,
                     'platform' => $entry->platform->name,
                     'quantity' => $entry->quantity,
+                    'transactions' => $entry->transactions->sortBy('executed_at')->values()
+                        ->map(fn ($transaction) => [
+                            'type' => $transaction->type,
+                            'quantity' => $transaction->quantity,
+                            'unit_price' => $transaction->unit_price,
+                            'fee' => $transaction->fee,
+                            'currency' => $transaction->currency,
+                            'executed_at' => $transaction->executed_at,
+                        ]),
                     'created_at' => $entry->created_at,
                     'updated_at' => $entry->updated_at,
                 ]),

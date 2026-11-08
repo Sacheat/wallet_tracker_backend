@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePortfolioEntryRequest;
 use App\Http\Requests\UpdatePortfolioEntryRequest;
 use App\Models\PortfolioEntry;
+use App\Services\PortfolioTransactionService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
@@ -19,9 +20,9 @@ class PortfolioEntryController extends Controller
             ->get();
     }
 
-    public function store(StorePortfolioEntryRequest $request)
+    public function store(StorePortfolioEntryRequest $request, PortfolioTransactionService $transactions)
     {
-        return $request->user()->portfolioEntries()->create($request->validated());
+        return $transactions->openPosition($request->user(), $request->validated());
     }
 
     public function show(PortfolioEntry $portfolioEntry)

@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Enums\AlertType;
 use App\Http\Requests\StoreAssetRequest;
+use App\Http\Requests\StorePortfolioTransactionRequest;
 use App\Http\Requests\UpdateNotificationSettingsRequest;
-use App\Http\Requests\UpdatePortfolioEntryRequest;
 use App\Models\PriceAlert;
 use App\Models\User;
 use App\Notifications\PriceAlertTriggered;
@@ -54,7 +54,7 @@ class AuditHardeningTest extends TestCase
 
     public function test_numeric_inputs_stay_within_their_column(): void
     {
-        $quantity = (new UpdatePortfolioEntryRequest)->rules()['quantity'];
+        $quantity = (new StorePortfolioTransactionRequest)->rules()['quantity'];
         $this->assertTrue(Validator::make(['q' => '1e15'], ['q' => $quantity])->fails());
         $this->assertTrue(Validator::make(['q' => '123456789.12345678'], ['q' => $quantity])->passes());
 

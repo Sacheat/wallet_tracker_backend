@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PortfolioEntry extends Model
 {
@@ -35,5 +36,14 @@ class PortfolioEntry extends Model
     public function platform(): BelongsTo
     {
         return $this->belongsTo(Platform::class);
+    }
+
+    /**
+     * Buy/sell journal; `quantity` above is its cached net total, kept in
+     * sync by PortfolioTransactionService.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(PortfolioTransaction::class);
     }
 }

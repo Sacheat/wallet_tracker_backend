@@ -6,11 +6,12 @@ use App\Enums\AssetType;
 use App\Models\Asset;
 use App\Models\Platform;
 use App\Models\User;
+use App\Services\PortfolioTransactionService;
 use Illuminate\Database\Seeder;
 
 class PortfolioSeeder extends Seeder
 {
-    public function run(): void
+    public function run(PortfolioTransactionService $transactions): void
     {
         $bitcoin = Asset::create([
             'name' => 'Bitcoin',
@@ -63,43 +64,43 @@ class PortfolioSeeder extends Seeder
             ['name' => 'Other User', 'password' => $testUser->password],
         );
 
-        $testUser->portfolioEntries()->create([
+        $transactions->openPosition($testUser, [
             'asset_id' => $bitcoin->id,
             'platform_id' => $binance->id,
             'quantity' => 0.1,
         ]);
 
-        $testUser->portfolioEntries()->create([
+        $transactions->openPosition($testUser, [
             'asset_id' => $bitcoin->id,
             'platform_id' => $kraken->id,
             'quantity' => 0.02,
         ]);
 
-        $testUser->portfolioEntries()->create([
+        $transactions->openPosition($testUser, [
             'asset_id' => $ethereum->id,
             'platform_id' => $binance->id,
             'quantity' => 1.5,
         ]);
 
-        $testUser->portfolioEntries()->create([
+        $transactions->openPosition($testUser, [
             'asset_id' => $solana->id,
             'platform_id' => $kraken->id,
             'quantity' => 12,
         ]);
 
-        $testUser->portfolioEntries()->create([
+        $transactions->openPosition($testUser, [
             'asset_id' => $apple->id,
             'platform_id' => $kraken->id,
             'quantity' => 3,
         ]);
 
-        $testUser->portfolioEntries()->create([
+        $transactions->openPosition($testUser, [
             'asset_id' => $gold->id,
             'platform_id' => $binance->id,
             'quantity' => 0.5,
         ]);
 
-        $otherUser->portfolioEntries()->create([
+        $transactions->openPosition($otherUser, [
             'asset_id' => $ethereum->id,
             'platform_id' => $kraken->id,
             'quantity' => 0.75,

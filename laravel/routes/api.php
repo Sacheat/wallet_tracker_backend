@@ -7,6 +7,7 @@ use App\Http\Controllers\NotificationSettingsController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\PortfolioEntryController;
+use App\Http\Controllers\PortfolioTransactionController;
 use App\Http\Controllers\PriceAlertController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::delete('/platforms/{platform}/logo', [PlatformController::class, 'destroyLogo']);
     });
     Route::apiResource('portfolio-entries', PortfolioEntryController::class);
+    Route::get('/portfolio-entries/{portfolioEntry}/transactions', [PortfolioTransactionController::class, 'index']);
+    Route::post('/portfolio-entries/{portfolioEntry}/transactions', [PortfolioTransactionController::class, 'store']);
+    Route::patch('/portfolio-transactions/{portfolioTransaction}', [PortfolioTransactionController::class, 'update']);
+    Route::delete('/portfolio-transactions/{portfolioTransaction}', [PortfolioTransactionController::class, 'destroy']);
     // Own throttle on top of the global 60/min: this one calls Gemini
     // (shared 500/day free-tier quota across every user), so a single
     // account looping the form shouldn't be able to eat a disproportionate

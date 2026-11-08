@@ -18,9 +18,19 @@ class UpdatePortfolioEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Column is decimal(20,8): 12 integer digits. Past that, MySQL
-            // rejects the write and the client got a bare 500.
-            'quantity' => 'required|numeric|gt:0|max:999999999999',
+            // The quantity is now the net of the position's transactions:
+            // editing it directly would silently desync the journal.
+            'quantity' => 'prohibited',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'quantity.prohibited' => 'La quantité se calcule à partir des transactions : ajoutez un achat ou une vente sur cette position.',
         ];
     }
 }
