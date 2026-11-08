@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::get('/portfolio/news', [PortfolioController::class, 'news']);
+    Route::get('/portfolio/history', [PortfolioController::class, 'history']);
     // Must come before apiResource: otherwise GET /assets/search is caught
     // by GET /assets/{asset} and Laravel tries to route-model-bind "search".
     Route::get('/assets/search', [AssetController::class, 'search']);

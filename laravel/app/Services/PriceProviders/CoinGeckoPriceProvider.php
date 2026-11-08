@@ -5,7 +5,7 @@ namespace App\Services\PriceProviders;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChangeProviderInterface, PriceProviderInterface
+class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChangeProviderInterface, PriceHistoryProviderInterface, PriceProviderInterface
 {
     private const MARKET_TTL_SECONDS = 45;
 
@@ -127,6 +127,47 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
         }
 
         return $fetched;
+    }
+
+    /**
+     * One request per coin for the whole year, cached an hour: every range
+     * the history endpoint offers is a slice of it. CoinGecko's daily points
+     * sit at 00:00 UTC (that day's opening price, i.e. the previous close);
+     * the last point is the current price, so today is filled in too. A
+     * failure serves the last good copy rather than a hole in the chart.
+     */
+    public function getDailyUsdCloses(string $externalId): array
+    {
+        $cacheKey = "coingecko_history_{$externalId}";
+        $backupKey = "{$cacheKey}_backup";
+
+        // false = cached "nothing available" (Cache::remember() treats a
+        // stored null as a miss and would refetch on every read).
+        $closes = Cache::remember($cacheKey, 3600, function () use ($externalId, $backupKey) {
+            try {
+                // external_id is user-supplied and lands in the path.
+                $response = Http::coingecko()->get('coins/'.rawurlencode($externalId).'/market_chart', [
+                    'vs_currency' => 'usd',
+                    'days' => self::HISTORY_DAYS,
+                    'interval' => 'daily',
+                ])->throw();
+
+                $closes = collect($response->json('prices', []))
+                    ->filter(fn ($point) => is_array($point) && is_numeric($point[0] ?? null) && is_numeric($point[1] ?? null))
+                    ->mapWithKeys(fn (array $point) => [gmdate('Y-m-d', intdiv((int) $point[0], 1000)) => (float) $point[1]])
+                    ->all();
+
+                Cache::forever($backupKey, $closes);
+
+                return $closes;
+            } catch (\Exception $e) {
+                report($e);
+
+                return Cache::get($backupKey, false);
+            }
+        });
+
+        return $closes ?: [];
     }
 
     private function marketKey(string $id): string

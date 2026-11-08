@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Http;
  * undocumented and can change or break without notice — confirmed live, not
  * assumed.
  */
-class YahooFinancePriceProvider implements PercentChangeProviderInterface, PriceProviderInterface
+class YahooFinancePriceProvider implements PercentChangeProviderInterface, PriceHistoryProviderInterface, PriceProviderInterface
 {
     public function getUsdPrices(array $externalIds): array
     {
@@ -75,6 +75,53 @@ class YahooFinancePriceProvider implements PercentChangeProviderInterface, Price
         }
 
         return (($chart['price'] - $oldPrice) / $oldPrice) * 100;
+    }
+
+    /**
+     * Daily candles over a year (Yahoo has far more, but CoinGecko caps the
+     * shared window at 365 days). Timestamps are the session open, so the
+     * UTC date is the trading day itself; today's candle carries the live
+     * price while the market is open.
+     */
+    public function getDailyUsdCloses(string $externalId): array
+    {
+        $cacheKey = "yahoo_finance_history_{$externalId}";
+        $backupKey = "{$cacheKey}_backup";
+
+        $closes = Cache::remember($cacheKey, 3600, function () use ($externalId, $backupKey) {
+            try {
+                // rawurlencode: external_id is user-supplied and lands in the path.
+                $response = Http::withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                    ->get('https://query1.finance.yahoo.com/v8/finance/chart/'.rawurlencode($externalId), [
+                        'interval' => '1d',
+                        'range' => '1y',
+                    ])->throw();
+
+                $result = data_get($response->json(), 'chart.result.0');
+                $values = data_get($result, 'indicators.quote.0.close', []);
+                $closes = [];
+                foreach (data_get($result, 'timestamp', []) as $index => $timestamp) {
+                    $close = $values[$index] ?? null;
+                    if (is_numeric($timestamp) && is_numeric($close)) {
+                        $closes[gmdate('Y-m-d', (int) $timestamp)] = (float) $close;
+                    }
+                }
+
+                if ($closes === []) {
+                    throw new \RuntimeException("Yahoo Finance returned no history for {$externalId}");
+                }
+
+                Cache::forever($backupKey, $closes);
+
+                return $closes;
+            } catch (\Exception $e) {
+                report($e);
+
+                return Cache::get($backupKey, false);
+            }
+        });
+
+        return $closes ?: [];
     }
 
     /**

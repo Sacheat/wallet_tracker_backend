@@ -135,6 +135,48 @@ class PriceService
     }
 
     /**
+     * USD→EUR/GBP/CHF for every day of a range, in one Frankfurter call
+     * (weekends included, checked live 2026-11-08). Cached an hour: the
+     * range ends today, whose rate still moves.
+     *
+     * @return array<string, array<string, float>> Keyed by date (Y-m-d), then currency code, USD excluded.
+     *
+     * @throws \RuntimeException When Frankfurter can't be reached.
+     */
+    public function getDailyUsdRates(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $from = $from->copy()->utc()->toDateString();
+        $to = $to->copy()->utc()->toDateString();
+        $quotes = collect(Currency::cases())
+            ->reject(fn (Currency $currency) => $currency === Currency::Usd)
+            ->map(fn (Currency $currency) => $currency->value)
+            ->implode(',');
+
+        return Cache::remember("usd_exchange_rates_{$from}_{$to}", 3600, function () use ($from, $to, $quotes) {
+            try {
+                $response = Http::get('https://api.frankfurter.dev/v2/rates', [
+                    'base' => 'USD',
+                    'from' => $from,
+                    'to' => $to,
+                    'quotes' => $quotes,
+                ])->throw();
+            } catch (\Exception $e) {
+                throw new \RuntimeException("Taux de change du {$from} au {$to} indisponibles", 0, $e);
+            }
+
+            $series = [];
+            foreach ($response->json() as $row) {
+                if (isset($row['date'], $row['quote'], $row['rate'])) {
+                    $series[$row['date']][$row['quote']] = (float) $row['rate'];
+                }
+            }
+            ksort($series);
+
+            return $series;
+        });
+    }
+
+    /**
      * @return array{rates: array<string, float>, updated_at: string}
      */
     private function fetchUsdRates(): array

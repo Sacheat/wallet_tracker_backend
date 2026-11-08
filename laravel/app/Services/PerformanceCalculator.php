@@ -49,6 +49,20 @@ class PerformanceCalculator
     }
 
     /**
+     * What the quantity still held cost, per currency, at each trade's own
+     * exchange rate: the "invested" line of the history chart.
+     *
+     * @param  iterable<PortfolioTransaction>  $transactions  Chronological order.
+     * @return array<string, float>|null Keyed by currency code; null when any trade lacks a price.
+     */
+    public function costBasis(iterable $transactions): ?array
+    {
+        $performance = $this->forPosition($transactions, 0.0, ['EUR' => 1.0, 'GBP' => 1.0, 'CHF' => 1.0]);
+
+        return $performance === null ? null : array_map(fn (array $figures) => $figures['cost_basis'], $performance);
+    }
+
+    /**
      * Sums positions whose profit is known. Positions still missing a
      * price are left out, not counted as zero: the caller reports how many.
      *
