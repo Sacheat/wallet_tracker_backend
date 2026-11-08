@@ -35,7 +35,9 @@ use Illuminate\Support\Facades\Storage;
 // onboarding_completed: true), never the resulting value directly —
 // ProfileController sets onboarding_completed_at = now() itself, same
 // pattern as AvatarController for avatar_path.
-#[Hidden(['password', 'remember_token', 'avatar_path'])]
+// allocation_targets has its own endpoint (AllocationController) and
+// is kept out of the user payload; set only through that controller.
+#[Hidden(['password', 'remember_token', 'avatar_path', 'allocation_targets'])]
 #[Appends(['avatar_url'])]
 class User extends Authenticatable implements MustVerifyEmailContract
 {
@@ -58,6 +60,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
             'weekly_digest_enabled' => 'boolean',
             'currency' => Currency::class,
             'is_admin' => 'boolean',
+            'allocation_targets' => 'array',
         ];
     }
 

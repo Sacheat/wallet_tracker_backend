@@ -28,6 +28,7 @@ class DataExportController extends Controller
                 'id', 'name', 'email', 'email_verified_at', 'currency', 'avatar_url',
                 'onboarding_completed_at', 'created_at', 'updated_at',
             ]),
+            'allocation_targets' => $user->allocation_targets,
             'notification_settings' => $user->only([
                 'email_notifications_enabled', 'discord_webhook_url',
                 'daily_digest_enabled', 'weekly_digest_enabled',

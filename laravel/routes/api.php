@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AllocationController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\MarketController;
@@ -15,6 +16,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::get('/portfolio/news', [PortfolioController::class, 'news']);
     Route::get('/portfolio/history', [PortfolioController::class, 'history']);
+    Route::get('/allocation', [AllocationController::class, 'show']);
+    Route::get('/allocation-targets', [AllocationController::class, 'targets']);
+    Route::put('/allocation-targets', [AllocationController::class, 'updateTargets']);
     // Must come before apiResource: otherwise GET /assets/search is caught
     // by GET /assets/{asset} and Laravel tries to route-model-bind "search".
     Route::get('/assets/search', [AssetController::class, 'search']);
