@@ -23,14 +23,18 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
     public bool $deleteWhenMissingModels = true;
 
     /**
-     * @param  float  $currentValue  The current price (asset alerts) or portfolio total (portfolio alerts).
+     * @param  float  $currentValue  The current price (asset alerts), portfolio total (portfolio alerts) or largest drift in points (allocation alerts).
      * @param  float|null  $percentChange  Only set for AlertType::PercentChange.
+     * @param  array{type: string, percent: float, target_percent: float}|null  $context  Only set for AlertType::AllocationDrift: the asset type furthest from its target.
      */
     public function __construct(
         public PriceAlert $alert,
         public float $currentValue,
         public ?float $percentChange = null,
+        public ?array $context = null,
     ) {}
+
+    private const ASSET_TYPE_LABELS = ['crypto' => 'la crypto', 'stock' => 'les actions', 'etf' => 'les ETF', 'gold' => "l'or"];
 
     /**
      * @return array<int, string>
@@ -92,6 +96,12 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
             AlertType::PortfolioTotalBelow => sprintf(
                 'La valeur totale de votre portefeuille est passée en dessous de %s $ (actuellement %s $).',
                 $this->formatNumber($alert->threshold), $this->formatNumber($this->currentValue)
+            ),
+            AlertType::AllocationDrift => sprintf(
+                'La répartition de votre portefeuille s\'écarte de vos objectifs de %s points (seuil : %s points). Le plus gros écart : %s, à %s %% pour un objectif de %s %%.',
+                $this->formatNumber($this->currentValue), $this->formatNumber($alert->percent_threshold),
+                self::ASSET_TYPE_LABELS[$this->context['type'] ?? ''] ?? ($this->context['type'] ?? '?'),
+                $this->formatNumber($this->context['percent'] ?? 0), $this->formatNumber($this->context['target_percent'] ?? 0)
             ),
         };
     }

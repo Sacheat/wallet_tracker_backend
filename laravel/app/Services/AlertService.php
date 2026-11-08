@@ -14,6 +14,7 @@ class AlertService
         private PriceService $priceService,
         private PortfolioService $portfolioService,
         private PriceChangeCalculator $priceChangeCalculator,
+        private AllocationService $allocationService,
     ) {}
 
     /**
@@ -53,6 +54,7 @@ class AlertService
     {
         $this->checkAssetAlerts();
         $this->checkPortfolioAlerts();
+        $this->checkAllocationAlerts();
     }
 
     private function checkAssetAlerts(): void
@@ -99,6 +101,51 @@ class AlertService
 
             foreach ($userAlerts as $alert) {
                 $this->evaluateThreshold($alert, $summary->totalValueUsd);
+            }
+        }
+    }
+
+    /**
+     * Same edge-triggering as the threshold alerts: one notification when
+     * the largest gap to target reaches the alert's points, then silence
+     * until the portfolio has come back within them. Targets removed since
+     * (or an empty portfolio) simply never meet the condition.
+     */
+    private function checkAllocationAlerts(): void
+    {
+        $alerts = PriceAlert::query()
+            ->with('user')
+            ->where('is_active', true)
+            ->where('type', AlertType::AllocationDrift)
+            ->get()
+            ->groupBy('user_id');
+
+        foreach ($alerts as $userAlerts) {
+            $user = $userAlerts->first()->user;
+            $allocation = $this->allocationService->build(
+                $this->portfolioService->getPortfolioSummary($user),
+                $user->allocation_targets ?? [],
+                null,
+            );
+            $worst = collect($allocation['by_type'])
+                ->filter(fn (array $row) => $row['drift'] !== null)
+                ->sortByDesc(fn (array $row) => abs($row['drift']))
+                ->first();
+
+            foreach ($userAlerts as $alert) {
+                $conditionMet = $allocation['max_drift'] !== null && $allocation['max_drift'] >= (float) $alert->percent_threshold;
+
+                if ($conditionMet && ! $alert->condition_met) {
+                    $user->notify(new PriceAlertTriggered($alert, $allocation['max_drift'], context: [
+                        'type' => $worst['type'],
+                        'percent' => $worst['percent'],
+                        'target_percent' => $worst['target_percent'],
+                    ]));
+                    $alert->last_triggered_at = now();
+                }
+
+                $alert->condition_met = $conditionMet;
+                $alert->save();
             }
         }
     }

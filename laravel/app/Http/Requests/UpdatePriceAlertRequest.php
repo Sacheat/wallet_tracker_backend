@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\AlertType;
 use App\Enums\AlertWindow;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -24,6 +25,17 @@ class UpdatePriceAlertRequest extends FormRequest
      */
     public function rules(): array
     {
+        // type is fixed after creation; a drift alert only has a threshold
+        // in points (≤ 100), no amount and no window.
+        if ($this->route('price_alert')?->type === AlertType::AllocationDrift) {
+            return [
+                'threshold' => 'prohibited',
+                'window' => 'prohibited',
+                'percent_threshold' => 'sometimes|required|numeric|gt:0|max:100',
+                'is_active' => 'sometimes|boolean',
+            ];
+        }
+
         return [
             // decimal(20,8) column, and the value is converted to USD before
             // being stored (CHF→USD can grow it): 1e11 keeps a margin under
