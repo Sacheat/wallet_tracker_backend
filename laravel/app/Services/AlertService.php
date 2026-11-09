@@ -140,6 +140,9 @@ class AlertService
                         'type' => $worst['type'],
                         'percent' => $worst['percent'],
                         'target_percent' => $worst['target_percent'],
+                        'rows' => collect($allocation['by_type'])
+                            ->map(fn (array $row) => ['type' => $row['type'], 'percent' => $row['percent'], 'target_percent' => $row['target_percent']])
+                            ->all(),
                     ]));
                     $alert->last_triggered_at = now();
                 }

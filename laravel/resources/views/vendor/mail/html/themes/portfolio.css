@@ -330,3 +330,110 @@ img {
 .muted {
     color: #6B7280;
 }
+
+/* Figure cards (x-mail::stats) */
+
+.stats {
+    margin: 4px 0 8px;
+}
+
+.stat {
+    background-color: #F5F6F8;
+    border: 1px solid #E4E6EC;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.stat-label {
+    color: #6B7280;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.4em;
+    margin: 0 0 6px;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    color: #12141A;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3em;
+    margin: 0;
+}
+
+.stat-accent {
+    color: #6C5CE7;
+}
+
+.stat-gain {
+    color: #006300;
+}
+
+.stat-loss {
+    color: #d03b3b;
+}
+
+.stat-hint {
+    color: #6B7280;
+    font-size: 12px;
+    line-height: 1.4em;
+    margin: 4px 0 0;
+}
+
+/* Allocation bars (x-mail::allocation) */
+
+.allocation {
+    margin: 20px 0 4px;
+}
+
+.allocation-label {
+    color: #12141A;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 0 6px;
+}
+
+.allocation-figures {
+    color: #12141A;
+    font-size: 14px;
+    padding: 0 0 6px;
+    text-align: right;
+}
+
+.allocation-bar-cell {
+    padding: 0 0 16px;
+}
+
+.allocation-track {
+    background-color: #EEF0F4;
+    border-radius: 4px;
+}
+
+.allocation-fill {
+    background-color: #6C5CE7;
+    border-radius: 4px;
+}
+
+.allocation-fill-off {
+    background-color: #d03b3b;
+}
+
+.drift-ok {
+    color: #6B7280;
+    font-weight: 600;
+}
+
+.drift-off {
+    color: #d03b3b;
+    font-weight: 600;
+}
+
+/* Small print under the main content */
+
+.note {
+    color: #6B7280;
+    font-size: 13px;
+    line-height: 1.6em;
+}

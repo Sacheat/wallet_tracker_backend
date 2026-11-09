@@ -22,10 +22,10 @@
     {{-- Footer --}}
     <x-slot:footer>
         <x-mail::footer>
-            {{ config('mail.brand.name') }} · {{ config('mail.brand.frontend_url') }}
-            @if ($manageNotifications)
-                Gérer mes notifications : {{ config('mail.brand.frontend_url') }}/account
-            @endif
+{{ config('mail.brand.name') }} · {{ config('mail.brand.frontend_url') }}
+@if ($manageNotifications)
+Gérer mes notifications : {{ config('mail.brand.frontend_url') }}/account
+@endif
         </x-mail::footer>
     </x-slot:footer>
 </x-mail::layout>

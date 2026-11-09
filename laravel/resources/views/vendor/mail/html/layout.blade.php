@@ -27,6 +27,16 @@ width: 100% !important;
 .button {
 width: 100% !important;
 }
+
+.stat {
+display: block !important;
+margin-bottom: 8px !important;
+width: 100% !important;
+}
+
+.stat-gap {
+display: none !important;
+}
 }
 </style>
 {!! $head ?? '' !!}
