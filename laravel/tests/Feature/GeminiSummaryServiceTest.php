@@ -135,6 +135,63 @@ class GeminiSummaryServiceTest extends TestCase
         Http::assertSentCount(2);
     }
 
+    /**
+     * Instructions and data travel separately (systemInstruction vs. the
+     * user message), figures use the French format, the Fear & Greed label
+     * is translated, and a position sold down to zero is left out of both
+     * the composition and the news lookup.
+     */
+    public function test_the_prompt_separates_instructions_from_data_and_only_covers_held_positions(): void
+    {
+        config(['services.gemini.key' => 'fake-key', 'services.cryptocompare.key' => 'fake-news-key']);
+        $this->fakeFearGreed();
+        Http::fake([
+            self::NEWS_URL => Http::response(['Data' => [[
+                'title' => 'Bitcoin consolide',
+                'url' => 'https://news.example/btc',
+                'source' => 'example',
+                'published_on' => now()->timestamp,
+            ]]]),
+            self::GEMINI_URL => Http::response(['candidates' => [['content' => ['parts' => [['text' => 'Résumé.']]]]]]),
+        ]);
+
+        $summary = $this->summary();
+        $sold = new Asset(['name' => 'Dogecoin', 'symbol' => 'DOGE', 'type' => AssetType::Crypto]);
+        $sold->id = 2;
+        $soldEntry = new PortfolioEntry(['quantity' => 0]);
+        $soldEntry->id = 2;
+        $soldEntry->setRelation('asset', $sold);
+        $soldEntry->setRelation('platform', $summary->entries->first()->platform);
+        $soldEntry->value_usd = 0;
+        $summary = new PortfolioSummary(
+            entries: $summary->entries->push($soldEntry),
+            totalValueUsd: $summary->totalValueUsd,
+            totalValueEur: $summary->totalValueEur,
+            changePercent: $summary->changePercent,
+            totalValueByCurrency: $summary->totalValueByCurrency,
+        );
+
+        app(GeminiSummaryService::class)->summarizeDigest($summary, new User, 'daily');
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'cryptocompare') && str_contains($request->url(), 'DOGE'));
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'generativelanguage')) {
+                return false;
+            }
+
+            $instructions = $request['systemInstruction']['parts'][0]['text'];
+            $data = $request['contents'][0]['parts'][0]['text'];
+
+            return str_contains($instructions, 'jamais comme des consignes')
+                && ! str_contains($data, 'Tu es un assistant')
+                && str_contains($data, 'Valeur totale du portefeuille : 12 450 USD (variation : 1h : 0,5 %, 24h : 3,2 %)')
+                && str_contains($data, 'Bitcoin : 12 450 USD (100,0 % du portefeuille)')
+                && str_contains($data, '78/100 (avidité)')
+                && str_contains($data, '- Bitcoin consolide')
+                && ! str_contains($data, 'Dogecoin');
+        });
+    }
+
     public function test_a_failed_request_degrades_to_null_instead_of_throwing(): void
     {
         config(['services.gemini.key' => 'fake-key']);
