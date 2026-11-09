@@ -7,6 +7,7 @@ use App\Enums\Currency;
 use App\Notifications\Channels\DiscordWebhookChannel;
 use App\Notifications\Concerns\EscapesMarkdown;
 use App\Notifications\Concerns\FormatsNumbersForHumans;
+use App\Notifications\Concerns\OffersUnsubscribe;
 use App\Notifications\Concerns\QueuedWithRetries;
 use App\Services\GeminiSummaryService;
 use App\Services\PortfolioDigestService;
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Notification;
 
 class PortfolioDigest extends Notification implements ShouldQueue
 {
-    use EscapesMarkdown, FormatsNumbersForHumans, QueuedWithRetries;
+    use EscapesMarkdown, FormatsNumbersForHumans, OffersUnsubscribe, QueuedWithRetries;
 
     /** @var array<string, string> */
     private const ASSET_TYPE_NAMES = ['crypto' => 'Crypto', 'stock' => 'Actions', 'etf' => 'ETF', 'gold' => 'Or'];
@@ -99,7 +100,9 @@ class PortfolioDigest extends Notification implements ShouldQueue
             'value_tone' => $this->tone($move['percent']),
         ];
 
-        return (new MailMessage)
+        $unsubscribeUrl = $this->unsubscribeUrl($notifiable);
+
+        return $this->withUnsubscribeHeaders((new MailMessage), $unsubscribeUrl)
             ->subject(sprintf(
                 'Votre portefeuille : %s%s',
                 $this->formatMoney($content['total'], $currency),
@@ -131,6 +134,7 @@ class PortfolioDigest extends Notification implements ShouldQueue
                 'portfolioUrl' => $frontendUrl.'/',
                 'allocationUrl' => $frontendUrl.'/allocation',
                 'accountUrl' => $frontendUrl.'/account',
+                'unsubscribeUrl' => $unsubscribeUrl,
             ]);
     }
 

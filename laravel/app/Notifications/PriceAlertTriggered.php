@@ -8,6 +8,7 @@ use App\Models\PriceAlert;
 use App\Notifications\Channels\DiscordWebhookChannel;
 use App\Notifications\Concerns\EscapesMarkdown;
 use App\Notifications\Concerns\FormatsNumbersForHumans;
+use App\Notifications\Concerns\OffersUnsubscribe;
 use App\Notifications\Concerns\QueuedWithRetries;
 use App\Services\PriceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +18,7 @@ use RuntimeException;
 
 class PriceAlertTriggered extends Notification implements ShouldQueue
 {
-    use EscapesMarkdown, FormatsNumbersForHumans, QueuedWithRetries;
+    use EscapesMarkdown, FormatsNumbersForHumans, OffersUnsubscribe, QueuedWithRetries;
 
     /** @var array<string, string> Asset type in a sentence ("le plus gros écart : la crypto"). */
     private const ASSET_TYPE_LABELS = ['crypto' => 'la crypto', 'stock' => 'les actions', 'etf' => 'les ETF', 'gold' => "l'or"];
@@ -75,10 +76,13 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
         $content = $this->content($notifiable);
         $frontendUrl = config('mail.brand.frontend_url');
 
-        return (new MailMessage)
+        $unsubscribeUrl = $this->unsubscribeUrl($notifiable);
+
+        return $this->withUnsubscribeHeaders((new MailMessage), $unsubscribeUrl)
             ->subject($content['subject'])
             ->markdown('mail.price-alert', [
                 ...$content,
+                'unsubscribeUrl' => $unsubscribeUrl,
                 'actionUrl' => $frontendUrl.$content['actionPath'],
                 'alertsUrl' => $frontendUrl.'/alerts',
             ]);

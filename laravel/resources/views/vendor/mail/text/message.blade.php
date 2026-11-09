@@ -1,4 +1,4 @@
-@props(['preheader' => null, 'manageNotifications' => false])
+@props(['preheader' => null, 'manageNotifications' => false, 'unsubscribeUrl' => null])
 <x-mail::layout>
     {{-- Header --}}
     <x-slot:header>
@@ -25,6 +25,9 @@
 {{ config('mail.brand.name') }} · {{ config('mail.brand.frontend_url') }}
 @if ($manageNotifications)
 Gérer mes notifications : {{ config('mail.brand.frontend_url') }}/account
+@endif
+@if ($unsubscribeUrl)
+Se désabonner : {{ $unsubscribeUrl }}
 @endif
         </x-mail::footer>
     </x-slot:footer>

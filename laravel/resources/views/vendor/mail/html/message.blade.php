@@ -2,8 +2,9 @@
     preheader: the grey line inboxes show after the subject.
     manageNotifications: notification emails (alerts, digests) link to the
     settings page where they can be switched off; account emails don't.
+    unsubscribeUrl: their one-step way out (see OffersUnsubscribe).
 --}}
-@props(['preheader' => null, 'manageNotifications' => false])
+@props(['preheader' => null, 'manageNotifications' => false, 'unsubscribeUrl' => null])
 @php($frontendUrl = config('mail.brand.frontend_url'))
 <x-mail::layout>
 {{-- Preheader --}}
@@ -37,7 +38,7 @@
 <x-mail::footer>
 **{{ config('mail.brand.name') }}** · suivi de portefeuille crypto, actions, ETF et or
 
-[Ouvrir l'application]({{ $frontendUrl }})@if ($manageNotifications) · [Gérer mes notifications]({{ $frontendUrl }}/account)@endif
+[Ouvrir l'application]({{ $frontendUrl }})@if ($manageNotifications) · [Gérer mes notifications]({{ $frontendUrl }}/account)@endif @if ($unsubscribeUrl) · [Se désabonner]({{ $unsubscribeUrl }})@endif
 
 
 @if ($manageNotifications)

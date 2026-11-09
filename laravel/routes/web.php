@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\DataExportController;
+use App\Http\Controllers\EmailUnsubscribeController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
@@ -39,6 +40,15 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
 Route::get('/email/verify', [EmailVerificationController::class, 'notice'])
     ->middleware(['auth', AuthenticateSession::class])
     ->name('verification.notice');
+
+// Unsubscribe link of the alert and digest emails (and their
+// List-Unsubscribe header): no login, the signature checked in the
+// controller is the proof — see EmailUnsubscribeController.
+Route::get('/email/unsubscribe/{user}', [EmailUnsubscribeController::class, 'show'])
+    ->middleware('throttle:20,1')
+    ->name('email.unsubscribe');
+Route::post('/email/unsubscribe/{user}', [EmailUnsubscribeController::class, 'store'])
+    ->middleware('throttle:20,1');
 
 // AuthenticateSession: the same check Sanctum already runs on /api/*
 // (sanctum.middleware.authenticate_session). It stores a hash of the

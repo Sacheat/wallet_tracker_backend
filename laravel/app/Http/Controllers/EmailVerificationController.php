@@ -18,7 +18,7 @@ class EmailVerificationController extends Controller
             $request->fulfill();
         }
 
-        $frontendUrl = rtrim(config('cors.allowed_origins')[0] ?? 'http://localhost:5173', '/');
+        $frontendUrl = config('mail.brand.frontend_url');
 
         return redirect("{$frontendUrl}/?verified=1");
     }

@@ -1,4 +1,4 @@
-<x-mail::message :preheader="$preheader" :manage-notifications="true">
+<x-mail::message :preheader="$preheader" :manage-notifications="true" :unsubscribe-url="$unsubscribeUrl">
 # {{ $headline }}
 
 <p class="dateline">{{ $dateline }}</p>

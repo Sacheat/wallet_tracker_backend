@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->throttleApi();
         $middleware->append(PreventBrowserCaching::class);
         $middleware->replace(TrustProxies::class, TrustVercelProxy::class);
+        // One-click unsubscribe (RFC 8058): the mail client POSTs with no
+        // session nor CSRF token; the URL's signature protects it instead.
+        $middleware->validateCsrfTokens(except: ['email/unsubscribe/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Always JSON, even without 'Accept: application/json': this app
