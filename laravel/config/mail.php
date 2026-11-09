@@ -112,7 +112,31 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'name' => env('MAIL_FROM_NAME', 'Portfolio Tracker'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Theme & Brand
+    |--------------------------------------------------------------------------
+    |
+    | Every email (Laravel's verification and reset ones included) renders
+    | through the published views in resources/views/vendor/mail with the
+    | "portfolio" theme, which carries the frontend's colors. The brand
+    | name is fixed here rather than read from APP_NAME, still "Laravel" on
+    | both environments. frontend_url is the first FRONTEND_URLS entry, the
+    | SPA's own origin, where every link in an email points.
+    |
+    */
+
+    'markdown' => [
+        'theme' => 'portfolio',
+        'paths' => [resource_path('views/vendor/mail')],
+    ],
+
+    'brand' => [
+        'name' => 'Portfolio Tracker',
+        'frontend_url' => rtrim(explode(',', env('FRONTEND_URLS', 'http://localhost:5173'))[0], '/'),
     ],
 
 ];

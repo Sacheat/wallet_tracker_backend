@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8C7EFF"/>
+      <stop offset="1" stop-color="#5A4BD6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <!-- Bars: the portfolio's holdings -->
+  <rect x="14" y="38" width="7" height="12" rx="2" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="25" y="32" width="7" height="18" rx="2" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="36" y="35" width="7" height="15" rx="2" fill="#FFFFFF" fill-opacity="0.35"/>
+  <!-- Rising value line -->
+  <polyline points="13,33 25,23 35,28 49,14" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="49" cy="14" r="4.5" fill="#FFFFFF"/>
+  <circle cx="49" cy="14" r="1.8" fill="#6C5CE7"/>
+</svg>

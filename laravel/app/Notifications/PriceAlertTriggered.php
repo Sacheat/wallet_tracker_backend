@@ -61,7 +61,8 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject('Crypto Portfolio Tracker — Alerte déclenchée')
-            ->line($this->message());
+            ->line($this->message())
+            ->markdown('notifications::email', ['manageNotifications' => true]);
     }
 
     public function toDiscord(object $notifiable): string

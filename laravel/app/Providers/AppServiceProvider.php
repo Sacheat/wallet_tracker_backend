@@ -86,10 +86,10 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => Password::min(15)->max(64)->uncompromised());
 
         // Laravel's default reset-link points at this backend, which has no
-        // password-reset page — the SPA does. First entry of FRONTEND_URLS
-        // (same env var CORS already reads) is the frontend's own origin.
+        // password-reset page — the SPA does (mail.brand.frontend_url, the
+        // first FRONTEND_URLS entry).
         ResetPassword::createUrlUsing(function ($user, string $token) {
-            $frontendUrl = config('cors.allowed_origins')[0] ?? 'http://localhost:5173';
+            $frontendUrl = config('mail.brand.frontend_url');
 
             return "{$frontendUrl}/reset-password?token={$token}&email=".urlencode($user->email);
         });

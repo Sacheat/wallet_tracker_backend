@@ -51,6 +51,7 @@ class PortfolioDigest extends Notification implements ShouldQueue
 
         $mail = (new MailMessage)
             ->subject("Crypto Portfolio Tracker — Digest {$label}")
+            ->markdown('notifications::email', ['manageNotifications' => true])
             ->line("Valeur totale : {$this->formatNumber($this->summary->totalValueUsd)} \$ / {$this->formatNumber($this->summary->totalValueEur)} €");
 
         if ($aiSummary = $this->aiSummary($notifiable)) {

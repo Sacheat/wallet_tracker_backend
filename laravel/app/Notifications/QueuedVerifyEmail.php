@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Notifications\Concerns\QueuedWithRetries;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
@@ -39,5 +40,24 @@ class QueuedVerifyEmail extends VerifyEmail implements ShouldQueue
         );
 
         return rtrim(Config::get('app.url'), '/').$relativeUrl;
+    }
+
+    /**
+     * The stock wording, in French (the app's only language).
+     *
+     * @param  string  $url
+     */
+    protected function buildMailMessage($url): MailMessage
+    {
+        $minutes = Config::get('auth.verification.expire', 60);
+
+        return (new MailMessage)
+            ->subject('Confirmez votre adresse e-mail')
+            ->greeting('Bienvenue sur '.Config::get('mail.brand.name').' !')
+            ->line('Il ne reste qu\'une étape : confirmez votre adresse e-mail pour accéder à votre portefeuille et recevoir vos alertes.')
+            ->action('Confirmer mon adresse', $url)
+            ->line("Ce lien est valable {$minutes} minutes.")
+            ->line('Si vous n\'avez pas créé de compte, ignorez simplement cet e-mail.')
+            ->markdown('notifications::email', ['preheader' => 'Confirmez votre adresse pour activer votre compte.']);
     }
 }
