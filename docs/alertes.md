@@ -1,6 +1,6 @@
 # Alertes
 
-Services : `AlertService`, `PriceChangeCalculator`. Commande : `alerts:check` (toutes les heures). Notification : `PriceAlertTriggered`.
+Services : `AlertService`, `PriceChangeCalculator`. Commande : `alerts:check` (**toutes les 5 minutes**). Notification : `PriceAlertTriggered`.
 
 ## Types
 
@@ -29,6 +29,21 @@ Le `threshold` est **saisi dans la devise du compte** et **stocké en USD**, com
 À l'envoi, les montants sont reconvertis dans la devise du compte au taux du jour (repli en USD si aucun taux n'est disponible : mieux vaut une alerte en dollars que pas d'alerte).
 
 ## Déclenchement
+
+## Fréquence et rafraîchissement des prix
+
+`alerts:check` tourne **toutes les 5 minutes** (sans chevauchement). Chaque passage :
+
+1. **Rafraîchit les prix** de tous les actifs détenus (quantité > 0) ou surveillés par une alerte active, en appels groupés (`AlertService::refreshPrices()` → `PriceService::refreshPrices()`) :
+   - **CoinGecko** : 1 appel `/coins/markets` pour toutes les cryptos (jusqu'à 250), **sans la clé Demo** (API publique, sans plafond mensuel). Si l'API publique refuse (429), nouvel essai avec la clé.
+   - **Yahoo Finance** : 1 appel `spark` par lot de 20 tickers, actions, ETF et or confondus.
+2. **Évalue toutes les alertes** en lisant uniquement ce cache : aucun appel supplémentaire, quel que soit le nombre d'utilisateurs ou d'alertes.
+
+Les notifications partent par la file d'attente, vidée chaque minute : une alerte arrive au plus environ 6 minutes après le franchissement du seuil.
+
+Budget CoinGecko : la clé Demo est limitée à 10 000 appels/mois ; un appel toutes les 5 minutes en ferait environ 8 900 à lui seul. C'est pour cela que ce rafraîchissement passe par l'API publique et laisse la clé aux actions des utilisateurs.
+
+## Évaluation
 
 `alerts:check` traite trois familles :
 
@@ -71,7 +86,7 @@ Le même calcul sert aux alertes, à la fiche actif et aux digests : tout le mon
 
 ## Snapshots de prix
 
-`snapshots:record` (toutes les heures) enregistre le prix USD de chaque actif **détenu par quelqu'un** ou **surveillé par une alerte active**. Ils servent au graphique 7 jours de la fiche actif et de repli pour les variations.
+`snapshots:record` (toutes les heures, juste après `alerts:check`, dont il réutilise les prix sans nouvel appel) enregistre le prix USD de chaque actif **détenu par quelqu'un** ou **surveillé par une alerte active**. Ils servent au graphique 7 jours de la fiche actif et de repli pour les variations.
 
 ## Création en langage naturel
 
@@ -85,4 +100,4 @@ Si l'alerte ou l'utilisateur est supprimé entre l'envoi en file et la livraison
 
 ## Tests associés
 
-`AllocationDriftAlertTest`, `PriceAlertMailTest`, `AlertParserServiceTest`.
+`AllocationDriftAlertTest`, `PriceAlertMailTest`, `AlertParserServiceTest`, `PriceRefreshTest`.

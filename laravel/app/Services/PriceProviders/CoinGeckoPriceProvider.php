@@ -5,9 +5,14 @@ namespace App\Services\PriceProviders;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChangeProviderInterface, PriceHistoryProviderInterface, PriceProviderInterface
+class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChangeProviderInterface, PriceHistoryProviderInterface, PriceProviderInterface, RefreshablePriceProviderInterface
 {
-    private const MARKET_TTL_SECONDS = 45;
+    /**
+     * A little over alerts:check's five-minute period: the refresh it runs
+     * keeps every held or watched coin warm, so page views, alerts and
+     * digests read that instead of calling CoinGecko themselves.
+     */
+    private const MARKET_TTL_SECONDS = 390;
 
     /** Documented maximum for /coins/markets per_page. */
     private const MAX_IDS_PER_REQUEST = 250;
@@ -33,6 +38,22 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
                 '7d' => $coin['price_change_percentage_7d_in_currency'] ?? null,
             ])
             ->toArray();
+    }
+
+    /**
+     * Keyless first: one call every five minutes is about 8,900 a month,
+     * nearly the Demo key's whole 10,000 monthly cap on its own, while the
+     * public API has no monthly cap (5-15 calls/min, checked 2026-11-09).
+     * The Demo key only steps in when the public API refuses (429 under
+     * load), and stays reserved for what users trigger.
+     */
+    public function refresh(array $externalIds): void
+    {
+        $externalIds = array_values(array_unique(array_filter($externalIds)));
+
+        if ($externalIds !== []) {
+            $this->fetchMarkets($externalIds, keyless: true);
+        }
     }
 
     /**
@@ -86,28 +107,15 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
      * hit again on every call.
      *
      * @param  array<int, string>  $ids
+     * @param  bool  $keyless  Try the public API first (see refresh()).
      * @return array<string, array<string, mixed>>
      */
-    private function fetchMarkets(array $ids): array
+    private function fetchMarkets(array $ids, bool $keyless = false): array
     {
         $fetched = [];
 
         foreach (array_chunk($ids, self::MAX_IDS_PER_REQUEST) as $chunk) {
-            $rows = null;
-
-            try {
-                $response = Http::coingecko()->get('coins/markets', [
-                    'vs_currency' => 'usd',
-                    'ids' => implode(',', $chunk),
-                    'per_page' => self::MAX_IDS_PER_REQUEST,
-                    'price_change_percentage' => '1h,24h,7d',
-                ]);
-                $response->throw();
-
-                $rows = collect($response->json())->keyBy('id')->toArray();
-            } catch (\Exception $e) {
-                report($e);
-            }
+            $rows = $this->requestMarkets($chunk, $keyless);
 
             foreach ($chunk as $id) {
                 $key = $this->marketKey($id);
@@ -127,6 +135,38 @@ class CoinGeckoPriceProvider implements AssetInfoProviderInterface, PercentChang
         }
 
         return $fetched;
+    }
+
+    /**
+     * @param  array<int, string>  $chunk
+     * @return array<string, array<string, mixed>>|null Rows keyed by coin id; null when the request failed.
+     */
+    private function requestMarkets(array $chunk, bool $keyless): ?array
+    {
+        $request = fn (bool $withKey) => collect(Http::coingecko($withKey)->get('coins/markets', [
+            'vs_currency' => 'usd',
+            'ids' => implode(',', $chunk),
+            'per_page' => self::MAX_IDS_PER_REQUEST,
+            'price_change_percentage' => '1h,24h,7d',
+        ])->throw()->json())->keyBy('id')->toArray();
+
+        try {
+            return $request(! $keyless);
+        } catch (\Exception $e) {
+            if (! $keyless || blank(config('services.coingecko.key'))) {
+                report($e);
+
+                return null;
+            }
+        }
+
+        try {
+            return $request(true);
+        } catch (\Exception $e) {
+            report($e);
+
+            return null;
+        }
     }
 
     /**

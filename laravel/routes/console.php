@@ -8,12 +8,17 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Percent-change alerts and asset-detail change figures now come live from
-// each provider (PercentChangeProviderInterface), not from these snapshots.
-// This job only builds the 7-day price history used by the asset detail
-// chart; hourly is a reasonable resolution for that chart.
+// Every five minutes: one batched call per provider (CoinGecko keyless,
+// Yahoo by 20 tickers) refreshes every held or watched asset, then every
+// alert is evaluated from that cache — near-live alerts at a cost that
+// doesn't grow with users or alerts. withoutOverlapping: a slow provider
+// never gets a second run started beside it.
+Schedule::command('alerts:check')->everyFiveMinutes()->withoutOverlapping();
+
+// The 7-day price history of the asset detail chart; hourly is enough for
+// it. Declared after alerts:check so that on the hour, when both are due,
+// it runs second and reads the prices alerts:check has just refreshed.
 Schedule::command('snapshots:record')->hourly();
-Schedule::command('alerts:check')->hourly();
 
 Schedule::command('digest:send daily')->dailyAt('08:00');
 Schedule::command('digest:send weekly')->weeklyOn(1, '08:00');

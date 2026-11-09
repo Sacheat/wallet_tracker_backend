@@ -15,8 +15,17 @@ use Illuminate\Support\Facades\Http;
  * undocumented and can change or break without notice — confirmed live, not
  * assumed.
  */
-class YahooFinancePriceProvider implements PercentChangeProviderInterface, PriceHistoryProviderInterface, PriceProviderInterface
+class YahooFinancePriceProvider implements PercentChangeProviderInterface, PriceHistoryProviderInterface, PriceProviderInterface, RefreshablePriceProviderInterface
 {
+    /**
+     * A little over alerts:check's five-minute period, whose refresh()
+     * keeps every held or watched ticker warm.
+     */
+    private const CHART_TTL_SECONDS = 390;
+
+    /** The spark endpoint answers 400 above this (checked live 2026-11-09). */
+    private const SPARK_MAX_SYMBOLS = 20;
+
     public function getUsdPrices(array $externalIds): array
     {
         $prices = [];
@@ -78,6 +87,78 @@ class YahooFinancePriceProvider implements PercentChangeProviderInterface, Price
     }
 
     /**
+     * The chart endpoint used by getChart() takes a single symbol; the
+     * spark endpoint takes up to 20 and, asked for the same range and
+     * interval, returns the same hourly closes over 8 days (checked live
+     * 2026-11-09: same points, last close = regularMarketPrice). Each
+     * symbol is stored in the exact shape getChart() caches, so reads
+     * don't know which endpoint filled it.
+     *
+     * A failed batch, or a symbol missing from the answer, is left alone:
+     * a later read falls back to getChart() for that symbol.
+     */
+    public function refresh(array $externalIds): void
+    {
+        $symbols = array_values(array_unique(array_filter($externalIds)));
+
+        foreach (array_chunk($symbols, self::SPARK_MAX_SYMBOLS) as $chunk) {
+            try {
+                // Query string, not path: Http encodes it ('GC=F' → GC%3DF).
+                $response = Http::withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                    ->get('https://query1.finance.yahoo.com/v8/finance/spark', [
+                        'symbols' => implode(',', $chunk),
+                        'interval' => '60m',
+                        'range' => '8d',
+                    ])->throw();
+            } catch (\Exception $e) {
+                report($e);
+
+                continue;
+            }
+
+            $bySymbol = collect($response->json() ?? [])
+                ->filter(fn ($entry) => is_array($entry))
+                ->keyBy(fn (array $entry, string $symbol) => strtoupper($symbol));
+
+            foreach ($chunk as $symbol) {
+                $chart = $this->chartFromSpark($bySymbol[strtoupper($symbol)] ?? null);
+
+                if ($chart !== null) {
+                    Cache::put($this->chartKey($symbol), $chart, self::CHART_TTL_SECONDS);
+                    Cache::forever($this->chartKey($symbol).'_backup', $chart);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $entry  One symbol of the spark answer.
+     * @return array{price: float, timestamps: array<int, int>, closes: array<int, ?float>}|null
+     */
+    private function chartFromSpark(?array $entry): ?array
+    {
+        $timestamps = $entry['timestamp'] ?? null;
+        $closes = $entry['close'] ?? null;
+
+        if (! is_array($timestamps) || ! is_array($closes)) {
+            return null;
+        }
+
+        $price = collect($closes)->filter(fn ($close) => is_numeric($close))->last();
+
+        if (! $price) {
+            return null;
+        }
+
+        return ['price' => (float) $price, 'timestamps' => $timestamps, 'closes' => $closes];
+    }
+
+    private function chartKey(string $symbol): string
+    {
+        return "yahoo_finance_chart_{$symbol}";
+    }
+
+    /**
      * Daily candles over a year (Yahoo has far more, but CoinGecko caps the
      * shared window at 365 days). Timestamps are the session open, so the
      * UTC date is the trading day itself; today's candle carries the live
@@ -133,7 +214,7 @@ class YahooFinancePriceProvider implements PercentChangeProviderInterface, Price
      */
     private function getChart(string $symbol): ?array
     {
-        $cacheKey = "yahoo_finance_chart_{$symbol}";
+        $cacheKey = $this->chartKey($symbol);
         $backupKey = "{$cacheKey}_backup";
 
         // false = cached "no price for this symbol". Cache::remember() treats
@@ -142,7 +223,7 @@ class YahooFinancePriceProvider implements PercentChangeProviderInterface, Price
         // tickers turned each GET /api/portfolio into one outbound call per
         // ticker — enough to get this server's IP throttled by Yahoo, and
         // stock/ETF/gold prices with it, for every user.
-        $chart = Cache::remember($cacheKey, 900, function () use ($symbol, $backupKey) {
+        $chart = Cache::remember($cacheKey, self::CHART_TTL_SECONDS, function () use ($symbol, $backupKey) {
             try {
                 // rawurlencode: external_id is user-supplied and lands in the
                 // path — without it, '../' or '?' could reach other Yahoo

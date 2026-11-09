@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('alerts:check')]
-#[Description('Evaluate every active price alert and notify users whose conditions are met')]
+#[Description('Refresh the prices of every held or watched asset in batched calls, then evaluate every active alert')]
 class CheckPriceAlerts extends Command
 {
     /**
@@ -16,6 +16,7 @@ class CheckPriceAlerts extends Command
      */
     public function handle(AlertService $alertService): void
     {
+        $alertService->refreshPrices();
         $alertService->checkAlerts();
 
         $this->info('Alerts checked.');

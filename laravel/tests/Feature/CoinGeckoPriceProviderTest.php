@@ -162,6 +162,72 @@ class CoinGeckoPriceProviderTest extends TestCase
         Http::assertSent(fn (Request $request) => $request['per_page'] === 250);
     }
 
+    public function test_refresh_uses_the_keyless_api_and_later_reads_cost_nothing(): void
+    {
+        config(['services.coingecko.key' => 'demo-key']);
+        $this->fakeMarkets();
+        $provider = new CoinGeckoPriceProvider;
+
+        $provider->refresh(['bitcoin', 'ethereum']);
+        $prices = $provider->getUsdPrices(['bitcoin', 'ethereum']);
+        $changes = $provider->getPercentChanges(['bitcoin']);
+
+        $this->assertEquals(100.0, $prices['ethereum']);
+        $this->assertEquals(2.0, $changes['bitcoin']['24h']);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request) => ! $request->hasHeader('x-cg-demo-api-key'));
+    }
+
+    public function test_refresh_refetches_coins_already_in_the_cache(): void
+    {
+        $this->fakeMarkets();
+        $provider = new CoinGeckoPriceProvider;
+
+        $provider->getUsdPrices(['bitcoin']);
+        $provider->refresh(['bitcoin']);
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_refresh_retries_with_the_demo_key_when_the_public_api_refuses(): void
+    {
+        config(['services.coingecko.key' => 'demo-key']);
+        Http::fake([
+            self::MARKETS_URL => Http::sequence()
+                ->push('rate limited', 429)
+                ->push([$this->marketRow('bitcoin')]),
+        ]);
+        $provider = new CoinGeckoPriceProvider;
+
+        $provider->refresh(['bitcoin']);
+
+        $sent = Http::recorded()->map(fn (array $pair) => $pair[0]->header('x-cg-demo-api-key'))->values()->all();
+        $this->assertSame([[], ['demo-key']], $sent);
+        $this->assertEquals(100.0, $provider->getUsdPrices(['bitcoin'])['bitcoin']);
+    }
+
+    public function test_without_a_demo_key_a_refused_refresh_is_not_retried(): void
+    {
+        config(['services.coingecko.key' => null]);
+        Http::fake([self::MARKETS_URL => Http::response('rate limited', 429)]);
+        $provider = new CoinGeckoPriceProvider;
+
+        $provider->refresh(['bitcoin']);
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_regular_reads_keep_using_the_demo_key(): void
+    {
+        config(['services.coingecko.key' => 'demo-key']);
+        $this->fakeMarkets();
+        $provider = new CoinGeckoPriceProvider;
+
+        $provider->getUsdPrices(['bitcoin']);
+
+        Http::assertSent(fn (Request $request) => $request->header('x-cg-demo-api-key') === ['demo-key']);
+    }
+
     public function test_the_requested_locales_description_is_returned(): void
     {
         Http::fake([self::COIN_URL => Http::response([

@@ -40,10 +40,12 @@ class AppServiceProvider extends ServiceProvider
         Http::globalOptions(['timeout' => 10, 'connect_timeout' => 5, 'force_ip_resolve' => 'v4']);
 
         // Every CoinGecko call site goes through this, so the optional Demo
-        // key (same host, own quota instead of the shared hosting IP's) is
-        // attached in one place — as a header, never in the URL.
-        Http::macro('coingecko', fn () => Http::baseUrl('https://api.coingecko.com/api/v3')
-            ->withHeaders(array_filter(['x-cg-demo-api-key' => config('services.coingecko.key')])));
+        // key (same host, own quota instead of the server IP's) is attached
+        // in one place — as a header, never in the URL. withKey: false is
+        // the keyless public API: 5-15 calls/min but no monthly cap, unlike
+        // the Demo key's 10,000 calls/month (see CoinGeckoPriceProvider::refresh()).
+        Http::macro('coingecko', fn (bool $withKey = true) => Http::baseUrl('https://api.coingecko.com/api/v3')
+            ->withHeaders(array_filter(['x-cg-demo-api-key' => $withKey ? config('services.coingecko.key') : null])));
 
         // One policy for both halves of the shared catalog: same ownership
         // rules, and auto-discovery would look for AssetPolicy/PlatformPolicy.

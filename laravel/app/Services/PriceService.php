@@ -7,6 +7,7 @@ use App\Enums\Currency;
 use App\Models\Asset;
 use App\Services\PriceProviders\CoinGeckoPriceProvider;
 use App\Services\PriceProviders\PriceProviderInterface;
+use App\Services\PriceProviders\RefreshablePriceProviderInterface;
 use App\Services\PriceProviders\YahooFinancePriceProvider;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -177,11 +178,16 @@ class PriceService
     }
 
     /**
+     * Cached an hour: Frankfurter serves the ECB reference rates, published
+     * once a working day, so refetching more often only repeats the same
+     * figures (portfolio alerts rebuild every user's summary every five
+     * minutes).
+     *
      * @return array{rates: array<string, float>, updated_at: string}
      */
     private function fetchUsdRates(): array
     {
-        return Cache::remember('usd_exchange_rates', 45, function () {
+        return Cache::remember('usd_exchange_rates', 3600, function () {
             try {
                 $response = Http::get('https://api.frankfurter.dev/v2/rates', [
                     'base' => 'USD',
@@ -226,6 +232,35 @@ class PriceService
         }
 
         return $prices;
+    }
+
+    /**
+     * Fetches fresh prices for every given asset in as few requests as each
+     * provider allows, into the cache getUsdPrices() and the percent-change
+     * lookups read. Grouped by provider rather than by type: stocks, ETFs
+     * and gold all go to Yahoo Finance, so they share its batches.
+     *
+     * @param  Collection<int, Asset>  $assets
+     */
+    public function refreshPrices(Collection $assets): void
+    {
+        $byProvider = [];
+
+        foreach ($assets as $asset) {
+            $provider = $this->providers[$asset->type->value] ?? null;
+
+            if (! $provider instanceof RefreshablePriceProviderInterface || ! $asset->external_id) {
+                continue;
+            }
+
+            $id = spl_object_id($provider);
+            $byProvider[$id]['provider'] = $provider;
+            $byProvider[$id]['ids'][] = $asset->external_id;
+        }
+
+        foreach ($byProvider as ['provider' => $provider, 'ids' => $ids]) {
+            $provider->refresh(array_values(array_unique($ids)));
+        }
     }
 
     public function providerFor(AssetType $type): PriceProviderInterface

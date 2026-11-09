@@ -160,7 +160,7 @@ Aucune clé n'est obligatoire pour faire tourner l'app : les prix (CoinGecko san
 
 | Commande | Effet |
 |---|---|
-| `php artisan alerts:check` | Évalue toutes les alertes actives et notifie. |
+| `php artisan alerts:check` | Rafraîchit les prix (appels groupés) puis évalue toutes les alertes actives. |
 | `php artisan snapshots:record` | Enregistre un prix USD pour chaque actif détenu ou surveillé. |
 | `php artisan digest:send daily\|weekly` | Envoie le résumé de portefeuille aux utilisateurs abonnés. |
 | `php artisan user:admin <email> [--revoke]` | Gère le rôle admin. |
@@ -175,8 +175,8 @@ Définies dans `routes/console.php` :
 
 | Fréquence | Commande |
 |---|---|
+| toutes les 5 minutes | `alerts:check` |
 | toutes les heures | `snapshots:record` |
-| toutes les heures | `alerts:check` |
 | tous les jours à 08:00 | `digest:send daily` |
 | lundi à 08:00 | `digest:send weekly` |
 | toutes les minutes | `queue:work --stop-when-empty --max-time=50` (sans chevauchement) |

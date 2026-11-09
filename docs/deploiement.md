@@ -113,7 +113,8 @@ Le planificateur (`routes/console.php`) lance alors tout, y compris un passage d
 | Fréquence | Commande |
 |---|---|
 | chaque minute | `queue:work --stop-when-empty --max-time=50` (`withoutOverlapping`) |
-| chaque heure | `snapshots:record`, `alerts:check` |
+| toutes les 5 minutes | `alerts:check` (rafraîchit les prix en appels groupés, puis évalue les alertes ; sans chevauchement) |
+| chaque heure | `snapshots:record` |
 | 08:00 chaque jour | `digest:send daily` |
 | lundi 08:00 | `digest:send weekly` |
 | chaque jour | `queue:prune-failed --hours=168` |

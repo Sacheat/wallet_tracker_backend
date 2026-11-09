@@ -81,7 +81,7 @@ Une ligne par couple `(user, asset, platform)` — unicité en base. `quantity` 
 
 ### `price_snapshots`
 
-`asset_id`, `price_usd`, `recorded_at`. Alimentée toutes les heures ; sert au graphique 7 jours de la fiche actif et de repli pour les variations %.
+`asset_id`, `price_usd`, `recorded_at`. Alimentée toutes les heures (à partir des prix rafraîchis par `alerts:check`) ; sert au graphique 7 jours de la fiche actif et de repli pour les variations %.
 
 ### `audit_logs`
 
@@ -128,6 +128,7 @@ Un fournisseur implémente `PriceProviderInterface` (prix USD courant) et, optio
 | `PercentChangeProviderInterface` | variations 1h/24h/7d natives | ✓ | ✓ |
 | `PriceHistoryProviderInterface` | clôtures quotidiennes sur 365 jours | ✓ | ✓ |
 | `AssetInfoProviderInterface` | description localisée, capitalisation | ✓ | — |
+| `RefreshablePriceProviderInterface` | rafraîchissement groupé de nombreux actifs (alertes, toutes les 5 min) | ✓ (1 appel / 250) | ✓ (1 appel / 20) |
 
 Les consommateurs testent la capacité avec `instanceof` ; ajouter un fournisseur revient à l'enregistrer dans le constructeur de `PriceService` pour le(s) type(s) d'actif concerné(s).
 

@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\PriceAlert;
 use App\Models\PriceSnapshot;
 use App\Notifications\PriceAlertTriggered;
+use Illuminate\Database\Eloquent\Collection;
 
 class AlertService
 {
@@ -18,15 +19,30 @@ class AlertService
     ) {}
 
     /**
+     * One batched call per provider for every asset held or watched, run
+     * just before checkAlerts(): every evaluation after it (asset prices,
+     * percent changes, each user's portfolio total and allocation) reads
+     * this warm cache, so the number of calls doesn't grow with the number
+     * of users or alerts.
+     */
+    public function refreshPrices(): void
+    {
+        $assets = $this->trackedAssets();
+
+        if ($assets->isNotEmpty()) {
+            $this->priceService->refreshPrices($assets);
+        }
+    }
+
+    /**
      * Snapshot the current USD price of every asset that's either held by
-     * someone or watched by an active alert, so percent-change alerts have
-     * history to compare against.
+     * someone or watched by an active alert, for the asset detail page's
+     * 7-day chart (and as a fallback for percent changes). Scheduled right
+     * after alerts:check, so it reads the prices that refresh just cached.
      */
     public function recordSnapshots(): void
     {
-        $assets = Asset::whereHas('portfolioEntries')
-            ->orWhereHas('priceAlerts', fn ($query) => $query->where('is_active', true))
-            ->get();
+        $assets = $this->trackedAssets();
 
         if ($assets->isEmpty()) {
             return;
@@ -48,6 +64,16 @@ class AlertService
                 'recorded_at' => $now,
             ]);
         }
+    }
+
+    /**
+     * @return Collection<int, Asset>
+     */
+    private function trackedAssets(): Collection
+    {
+        return Asset::whereHas('portfolioEntries', fn ($query) => $query->where('quantity', '>', 0))
+            ->orWhereHas('priceAlerts', fn ($query) => $query->where('is_active', true))
+            ->get();
     }
 
     public function checkAlerts(): void

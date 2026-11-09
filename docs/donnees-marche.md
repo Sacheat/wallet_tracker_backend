@@ -34,7 +34,8 @@ Toutes les sources sont gratuites. Seules les actualités nécessitent une clé 
 
 ## CoinGecko
 
-- **Cache par coin**, pas par lot : `crypto_market_{id}`, 45 s. N'importe quel appelant (portefeuille entier, alerte, fiche actif) lit les mêmes entrées, et seuls les coins absents sont récupérés, en une requête groupée. (Avec un cache par lot, N coins coûtaient N+1 requêtes, sur un plan gratuit qui répond vite 429.)
+- **Rafraîchissement toutes les 5 minutes** par `alerts:check` (`refresh()`) : un seul appel pour toutes les cryptos détenues ou surveillées, **sans clé** (API publique, sans plafond mensuel), avec nouvel essai via la clé Demo si l'API publique répond 429. Le reste de l'app lit ce cache.
+- **Cache par coin**, pas par lot : `crypto_market_{id}`, 6 min 30 (un peu plus que la période du rafraîchissement). N'importe quel appelant (portefeuille entier, alerte, fiche actif) lit les mêmes entrées, et seuls les coins absents sont récupérés, en une requête groupée. (Avec un cache par lot, N coins coûtaient N+1 requêtes, sur un plan gratuit qui répond vite 429.)
 - Les variations 1h/24h/7d viennent du **même appel** que le prix (`price_change_percentage=1h,24h,7d`).
 - Requêtes par paquets de 250 identifiants (au-delà, `/coins/markets` tronque silencieusement).
 - Clé Demo envoyée dans l'en-tête `x-cg-demo-api-key` via la macro `Http::coingecko()`. Sans clé, les requêtes partagent le quota de l'IP publique du serveur.
@@ -45,7 +46,8 @@ Toutes les sources sont gratuites. Seules les actualités nécessitent une clé 
 
 API non documentée : peut changer sans préavis. Choisie parce qu'aucune alternative gratuite ne couvrait l'or (metals-api payant, Alpha Vantage refuse XAU) et qu'Alpha Vantage limite les actions à 25 requêtes/jour.
 
-- Prix + variations : **une requête** de bougies horaires sur 8 jours (`interval=60m&range=8d`), cache 15 min + secours. La variation sur N heures compare le prix actuel à la dernière clôture d'il y a au moins N heures.
+- **Rafraîchissement groupé** (`refresh()`, toutes les 5 minutes) : endpoint `v8/finance/spark`, **jusqu'à 20 tickers par appel** (au-delà : 400), mêmes paramètres `interval=60m&range=8d`. Il renvoie les mêmes clôtures horaires que l'endpoint `chart`, stockées sous la même forme et la même clé de cache. Un ticker absent de la réponse, ou un lot en échec, retombe sur l'appel individuel ci-dessous lors de la lecture.
+- Prix + variations à la demande : **une requête par ticker** (`v8/finance/chart`), bougies horaires sur 8 jours, cache 6 min 30 + secours. La variation sur N heures compare le prix actuel à la dernière clôture d'il y a au moins N heures.
 - Historique : bougies quotidiennes sur 1 an, cache 1 h + secours.
 - Pas de description ni de capitalisation (l'endpoint de profil exige un « crumb » de session).
 - En-tête `User-Agent: Mozilla/5.0` requis.
@@ -56,7 +58,7 @@ Devises gérées : `USD` (base), `EUR`, `GBP`, `CHF`.
 
 | Méthode | Usage | Cache |
 |---|---|---|
-| `getUsdToCurrencyRates()` | taux du jour (totaux, affichage, conversions) | 45 s + secours permanent |
+| `getUsdToCurrencyRates()` | taux du jour (totaux, affichage, conversions) | 1 h + secours permanent (taux BCE publiés une fois par jour ouvré) |
 | `getUsdToCurrencyRatesWithTimestamp()` | `/api/exchange-rates` (avec horodatage) | idem |
 | `convertToUsd($montant, $devise)` | seuils d'alerte, apport ; USD court-circuité sans appel | idem |
 | `getHistoricalUsdRates($date)` | `fx_rates` d'une transaction | **permanent** pour un jour passé, 1 h pour aujourd'hui |
@@ -107,12 +109,12 @@ Variation du portefeuille : reconstruction de la valeur de début de fenêtre po
 
 | Clé | Durée |
 |---|---|
-| `crypto_market_{id}` | 45 s (`_backup` permanent) |
+| `crypto_market_{id}` | 6 min 30 (`_backup` permanent), rafraîchi toutes les 5 min |
 | `coingecko_history_{id}` | 1 h (`_backup`) |
 | `coingecko_info_{id}` | 1 h |
-| `yahoo_finance_chart_{symbole}` | 15 min (`_backup`) |
+| `yahoo_finance_chart_{symbole}` | 6 min 30 (`_backup`), rafraîchi toutes les 5 min |
 | `yahoo_finance_history_{symbole}` | 1 h (`_backup`) |
-| `usd_exchange_rates` | 45 s (`usd_exchange_rates_backup` permanent) |
+| `usd_exchange_rates` | 1 h (`usd_exchange_rates_backup` permanent) |
 | `usd_exchange_rates_on_{date}` | permanent (1 h si aujourd'hui) |
 | `usd_exchange_rates_{du}_{au}` | 1 h |
 | `asset_search_{md5}` | 5 min, seulement si les deux sources ont répondu |
@@ -123,4 +125,4 @@ Variation du portefeuille : reconstruction de la valeur de début de fenêtre po
 
 ## Tests associés
 
-`CoinGeckoPriceProviderTest`, `ExchangeRatesTest`, `HistoricalExchangeRatesTest`, `MarketauxNewsProviderTest`, `NewsUrlFilterTest`, `OutboundHttpTest`.
+`CoinGeckoPriceProviderTest`, `YahooFinancePriceProviderTest`, `PriceRefreshTest`, `ExchangeRatesTest`, `HistoricalExchangeRatesTest`, `MarketauxNewsProviderTest`, `NewsUrlFilterTest`, `OutboundHttpTest`.
