@@ -1,7 +1,7 @@
 {{--
-    Current share vs target per asset type, as bars. rows: list of
-    ['label' => string, 'percent' => float, 'target' => float,
-    'percent_text' => string, 'target_text' => string, 'drift_text' => string,
+    Current share (and target, when set) per asset type, as bars. rows:
+    list of ['label' => string, 'percent' => float, 'percent_text' => string,
+    'target_text' => ?string, 'drift_text' => ?string,
     'off' => bool (gap at or over the alert's threshold)].
 --}}
 @props(['rows'])
@@ -9,7 +9,7 @@
 @foreach ($rows as $row)
 <tr>
 <td class="allocation-label">{{ $row['label'] }}</td>
-<td class="allocation-figures" align="right">{{ $row['percent_text'] }} <span class="muted">/ objectif {{ $row['target_text'] }}</span> &nbsp;<span class="{{ $row['off'] ? 'drift-off' : 'drift-ok' }}">{{ $row['drift_text'] }}</span></td>
+<td class="allocation-figures" align="right">{{ $row['percent_text'] }}@if (! empty($row['target_text'])) <span class="muted">/ objectif {{ $row['target_text'] }}</span> &nbsp;<span class="{{ $row['off'] ? 'drift-off' : 'drift-ok' }}">{{ $row['drift_text'] }}</span>@endif</td>
 </tr>
 <tr>
 <td colspan="2" class="allocation-bar-cell">

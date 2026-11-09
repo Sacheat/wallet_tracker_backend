@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Notifications\PortfolioDigest;
+use App\Services\PortfolioDigestService;
 use App\Services\PortfolioService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -16,7 +17,7 @@ class SendPortfolioDigest extends Command
     /**
      * Execute the console command.
      */
-    public function handle(PortfolioService $portfolioService): void
+    public function handle(PortfolioService $portfolioService, PortfolioDigestService $digestService): void
     {
         $frequency = $this->argument('frequency');
 
@@ -33,12 +34,14 @@ class SendPortfolioDigest extends Command
 
         foreach ($users as $user) {
             $summary = $portfolioService->getPortfolioSummary($user);
+            $content = $digestService->build($user, $summary, $frequency);
 
-            if ($summary->entries->isEmpty()) {
+            // Nothing held (no position, or everything sold): nothing to report.
+            if ($content === null) {
                 continue;
             }
 
-            $user->notify(new PortfolioDigest($summary, $frequency));
+            $user->notify(new PortfolioDigest($summary, $frequency, $content));
             $sent++;
         }
 

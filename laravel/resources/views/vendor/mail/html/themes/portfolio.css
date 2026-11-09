@@ -437,3 +437,89 @@ img {
     font-size: 13px;
     line-height: 1.6em;
 }
+
+/* Lines (x-mail::rows) */
+
+.rows {
+    margin: 0 0 8px;
+}
+
+.row-main,
+.row-figures {
+    border-bottom: 1px solid #EEF0F4;
+    padding: 10px 0;
+}
+
+.row-figures {
+    padding-left: 12px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.row-title {
+    color: #12141A;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4em;
+    margin: 0;
+}
+
+.row-sub {
+    color: #6B7280;
+    font-size: 12px;
+    line-height: 1.4em;
+    margin: 2px 0 0;
+}
+
+.row-value {
+    color: #12141A;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4em;
+    margin: 0;
+    text-align: right;
+}
+
+.row-detail {
+    font-size: 12px;
+    line-height: 1.4em;
+    margin: 2px 0 0;
+    text-align: right;
+}
+
+.tone-default {
+    color: #12141A;
+}
+
+.tone-muted {
+    color: #6B7280;
+}
+
+.tone-gain {
+    color: #006300;
+}
+
+.tone-loss {
+    color: #d03b3b;
+}
+
+/* Digest */
+
+.dateline {
+    color: #6B7280;
+    font-size: 14px;
+    margin: -8px 0 20px;
+}
+
+.columns-cell {
+    padding: 0;
+}
+
+.ai-label {
+    color: #6C5CE7;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    margin: 0 0 6px;
+    text-transform: uppercase;
+}

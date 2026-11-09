@@ -26,9 +26,6 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
     private const ASSET_TYPE_NAMES = ['crypto' => 'Crypto', 'stock' => 'Actions', 'etf' => 'ETF', 'gold' => 'Or'];
 
     /** @var array<string, string> */
-    private const CURRENCY_SYMBOLS = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'CHF' => 'CHF'];
-
-    /** @var array<string, string> */
     private const WINDOW_LABELS = ['1h' => '1 h', '24h' => '24 h', '7d' => '7 jours'];
 
     /** @var array<string, string> The cooldown, which is the window itself. */
@@ -104,7 +101,7 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
     {
         $alert = $this->alert;
         [$currency, $rate] = $this->displayCurrency($notifiable);
-        $money = fn (float|string $usd) => $this->money((float) $usd * $rate, $currency);
+        $money = fn (float|string $usd) => $this->formatMoney((float) $usd * $rate, $currency);
 
         // Asset names come from a catalog any user can edit: escaped where
         // the text is parsed as Markdown (headline, intro, note, Discord),
@@ -131,7 +128,7 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
                     'stats' => [
                         ['label' => 'Prix actuel', 'value' => $money($this->currentValue), 'tone' => $above ? 'gain' : 'loss'],
                         ['label' => 'Votre seuil', 'value' => $money($threshold), 'hint' => $above ? 'franchi à la hausse' : 'franchi à la baisse'],
-                        ['label' => 'Écart', 'value' => $this->signedPercent($gap), 'hint' => 'par rapport au seuil'],
+                        ['label' => 'Écart', 'value' => $this->formatSignedPercent($gap), 'hint' => 'par rapport au seuil'],
                     ],
                     'allocation' => [],
                     'actionText' => "Voir {$name}",
@@ -146,7 +143,7 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
 
             AlertType::PercentChange => (function () use ($alert, $name, $ticker, $asset, $symbol, $money) {
                 $window = self::WINDOW_LABELS[$alert->window->value] ?? $alert->window->value;
-                $change = $this->signedPercent((float) $this->percentChange);
+                $change = $this->formatSignedPercent((float) $this->percentChange);
                 $rising = $this->percentChange >= 0;
 
                 return [
@@ -181,7 +178,7 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
                     'stats' => [
                         ['label' => 'Valeur actuelle', 'value' => $money($this->currentValue), 'tone' => $above ? 'gain' : 'loss'],
                         ['label' => 'Votre seuil', 'value' => $money($threshold), 'hint' => $above ? 'franchi à la hausse' : 'franchi à la baisse'],
-                        ['label' => 'Écart', 'value' => $this->signedPercent($gap), 'hint' => 'par rapport au seuil'],
+                        ['label' => 'Écart', 'value' => $this->formatSignedPercent($gap), 'hint' => 'par rapport au seuil'],
                     ],
                     'allocation' => [],
                     'actionText' => 'Voir mon portefeuille',
@@ -254,23 +251,5 @@ class PriceAlertTriggered extends Notification implements ShouldQueue
         }
 
         return $rate === null ? [Currency::Usd, 1.0] : [$currency, (float) $rate];
-    }
-
-    /**
-     * French style, symbol after the amount; sub-unit prices (small
-     * cryptos) keep up to 8 decimals so they don't round to 0.
-     */
-    private function money(float $amount, Currency $currency): string
-    {
-        $formatted = abs($amount) >= 1 || $amount == 0.0
-            ? number_format($amount, 2, ',', ' ')
-            : $this->formatNumber($amount, 8);
-
-        return $formatted.' '.self::CURRENCY_SYMBOLS[$currency->value];
-    }
-
-    private function signedPercent(float $percent): string
-    {
-        return ($percent > 0 ? '+' : '').$this->formatNumber($percent).' %';
     }
 }
