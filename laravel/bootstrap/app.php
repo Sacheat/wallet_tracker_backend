@@ -1,11 +1,10 @@
 <?php
 
 use App\Http\Middleware\PreventBrowserCaching;
-use App\Http\Middleware\TrustVercelProxy;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,7 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->throttleApi();
         $middleware->append(PreventBrowserCaching::class);
-        $middleware->replace(TrustProxies::class, TrustVercelProxy::class);
+        // The reverse proxy (nginx) runs on the same machine: only loopback
+        // is trusted, so $request->ip() — the 'auth'/'api' rate limiters and
+        // sessions.ip_address — is the real client, while a client-sent
+        // X-Forwarded-For on a direct hit stays ignored. Only For/Proto:
+        // nginx passes a client's X-Forwarded-Host through untouched.
+        $middleware->trustProxies(
+            at: ['127.0.0.1', '::1'],
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO,
+        );
         // One-click unsubscribe (RFC 8058): the mail client POSTs with no
         // session nor CSRF token; the URL's signature protects it instead.
         $middleware->validateCsrfTokens(except: ['email/unsubscribe/*']);

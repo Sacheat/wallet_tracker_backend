@@ -23,15 +23,8 @@ Schedule::command('snapshots:record')->hourly();
 Schedule::command('digest:send daily')->dailyAt('08:00');
 Schedule::command('digest:send weekly')->weeklyOn(1, '08:00');
 
-// Queued mail/Discord notifications. alwaysdata forbids long-running
-// background processes (no permanent `queue:work`), so the scheduler drains
-// the queue once a minute and exits. --max-time keeps a run inside its
-// minute; jobs in their retry backoff (10 s, 60 s) aren't available yet and
-// are simply picked up by a later run. withoutOverlapping: a slow run (a
-// digest hitting Gemini) never gets a second worker started beside it.
-Schedule::command('queue:work --stop-when-empty --max-time=50')
-    ->everyMinute()
-    ->withoutOverlapping();
+// Queued mail/Discord notifications are processed by the permanent
+// `queue:work` systemd service (deploy/systemd/wallet-tracker-queue.service).
 
 // Failed notification jobs keep their serialized payload (recipient,
 // alert, portfolio figures): 7 days is enough to investigate a delivery

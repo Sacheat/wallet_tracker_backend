@@ -30,13 +30,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Guzzle's default is no timeout at all: one hung provider would pin
-        // a PHP worker indefinitely (free hosting often has a single one).
+        // a PHP worker indefinitely.
         // Calls that need longer (Gemini) still set their own ->timeout().
         //
-        // IPv4 only: alwaysdata egresses over IPv6 by default, and Google
-        // rejects that address outright (403, "User location is not
-        // supported" — confirmed live 2026-09-28) while the IPv4 one is
-        // accepted. Every provider used here was checked to serve IPv4.
+        // IPv4 only: Google may reject a server's IPv6 egress outright (403,
+        // "User location is not supported" — seen live 2026-09-28) while the
+        // IPv4 one is accepted. Every provider used here was checked to serve IPv4.
         Http::globalOptions(['timeout' => 10, 'connect_timeout' => 5, 'force_ip_resolve' => 'v4']);
 
         // Every CoinGecko call site goes through this, so the optional Demo

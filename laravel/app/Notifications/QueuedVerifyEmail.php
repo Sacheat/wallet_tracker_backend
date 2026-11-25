@@ -20,12 +20,11 @@ class QueuedVerifyEmail extends VerifyEmail implements ShouldQueue
     use QueuedWithRetries;
 
     /**
-     * In production the browser reaches this backend through the Vercel
-     * proxy (https://<front>/backend/... → alwaysdata, prefix stripped), so
-     * the host and path the user clicks differ from the ones the backend
-     * sees. The signature therefore covers only the relative path + query
-     * (validated by 'signed:relative' on the route), and the link is
-     * prefixed with APP_URL — the proxied base the user can actually reach.
+     * Behind a reverse proxy the host, scheme or path prefix the user clicks
+     * can differ from what the backend sees. The signature therefore covers
+     * only the relative path + query (validated by 'signed:relative' on the
+     * route), and the link is prefixed with APP_URL — the public base the
+     * user can actually reach.
      */
     protected function verificationUrl($notifiable): string
     {

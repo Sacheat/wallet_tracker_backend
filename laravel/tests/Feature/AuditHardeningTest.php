@@ -73,7 +73,7 @@ class AuditHardeningTest extends TestCase
         $this->assertContains('throttle:data-export', app('router')->getRoutes()->getByAction('App\\Http\\Controllers\\DataExportController')->gatherMiddleware());
     }
 
-    public function test_the_verification_link_goes_through_the_proxy_and_its_signature_survives_the_prefix_strip(): void
+    public function test_the_verification_link_uses_app_url_and_its_signature_survives_a_proxy_prefix_strip(): void
     {
         config(['app.url' => 'https://front.example/backend']);
         $user = new User(['email' => 'x@example.com']);
@@ -84,8 +84,8 @@ class AuditHardeningTest extends TestCase
 
         $this->assertStringStartsWith('https://front.example/backend/email/verify/7/', $link);
 
-        // What the backend receives once Vercel has stripped /backend.
-        $proxied = Request::create('https://pftracker.alwaysdata.net'.substr($link, strlen('https://front.example/backend')));
+        // What the backend receives once the reverse proxy has stripped /backend.
+        $proxied = Request::create('http://127.0.0.1'.substr($link, strlen('https://front.example/backend')));
         $this->assertTrue(URL::hasValidSignature($proxied, absolute: false));
 
         $tampered = Request::create(str_replace('/verify/7/', '/verify/8/', $proxied->fullUrl()));
