@@ -112,7 +112,7 @@ C'est le **seul** moyen de devenir admin (aucune route API ne le permet).
     │   ├── Enums/            # AssetType, AlertType, AlertWindow, Currency, TransactionType
     │   ├── Http/
     │   │   ├── Controllers/
-    │   │   ├── Middleware/   # PreventBrowserCaching, TrustVercelProxy
+    │   │   ├── Middleware/   # PreventBrowserCaching
     │   │   ├── Requests/     # toute la validation (FormRequest)
     │   │   └── Resources/
     │   ├── Models/           # + Concerns/Auditable, Concerns/HasLogo
@@ -143,7 +143,6 @@ Seules les variables propres à l'application ou importantes sont listées ; le 
 | `FRONTEND_URLS` | Origines autorisées en CORS, séparées par des virgules. La **première** sert de base à tous les liens des e-mails. |
 | `SANCTUM_STATEFUL_DOMAINS` | Domaines (sans schéma) dont les requêtes sont authentifiées par cookie de session. |
 | `SESSION_DOMAIN`, `SESSION_SECURE_COOKIE`, `SESSION_SAME_SITE` | Cookie de session (voir [déploiement](docs/deploiement.md)). |
-| `PROXY_SECRET` | Hérité de l'ancien hébergement Vercel. **À laisser vide** (local et VPS) : si défini, toute requête sans en-tête `X-Proxy-Secret` est refusée (403). |
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` | `log` en local ; en prod SMTP Brevo (`smtp-relay.brevo.com:587`). `RESEND_API_KEY` ne sert que si `MAIL_MAILER=resend`. |
 | `GEMINI_API_KEY` | IA : résumé des digests et création d'alerte en langage naturel. Optionnel (dégradation propre). |
 | `COINGECKO_API_KEY` | Clé « Demo » CoinGecko, optionnelle (quota propre au lieu de celui de l'IP de l'hébergeur). |
@@ -214,3 +213,7 @@ PHPUnit 12. Les appels HTTP externes sont simulés avec `Http::fake()` ; aucun t
 | [Données de marché](docs/donnees-marche.md) | Prix, variations, historiques, taux de change, actualités, Fear & Greed, cache. |
 | [Catalogue partagé](docs/catalogue.md) | Actifs et plateformes, recherche, logos, droits, rôle admin. |
 | [Déploiement](docs/deploiement.md) | Production sur VPS (NGINX + PHP-FPM, Brevo), scheduler et file d'attente. |
+
+## Licence
+
+[MIT](LICENSE)

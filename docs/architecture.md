@@ -7,7 +7,7 @@
                 │  cookie de session + X-XSRF-TOKEN
                 ▼
   ┌──────────────────────────────┐
-  │ Middleware                    │  TrustVercelProxy, PreventBrowserCaching,
+  │ Middleware                    │  TrustProxies, PreventBrowserCaching,
   │                               │  CORS, Sanctum stateful, throttle, verified
   ├──────────────────────────────┤
   │ Controllers (minces)          │  validation déléguée aux FormRequest,
@@ -139,7 +139,7 @@ Les consommateurs testent la capacité avec `instanceof` ; ajouter un fournisseu
 
 ## Configuration notable (`AppServiceProvider`)
 
-- **Client HTTP global** : timeout 10 s, connexion 5 s, **IPv4 forcé** (introduit sur l'ancien hébergeur alwaysdata, dont l'IPv6 était refusée par Google ; sans effet gênant sur le VPS).
+- **Client HTTP global** : timeout 10 s, connexion 5 s, **IPv4 forcé** (Google peut refuser l'IPv6 sortante d'un serveur ; tous les fournisseurs utilisés répondent en IPv4).
 - **Macro `Http::coingecko()`** : base URL + clé Demo en en-tête si présente.
 - **Policies** : `CatalogPolicy` enregistrée pour `Asset` et `Platform`.
 - **Rate limiters** : `api`, `auth`, `catalog-writes`, `ai-parse`, `data-export` (voir [sécurité](authentification-securite.md#rate-limiting)).
@@ -153,7 +153,7 @@ Les consommateurs testent la capacité avec `instanceof` ; ajouter un fournisseu
 | Code | Cas |
 |---|---|
 | 401 | Non authentifié. |
-| 403 | E-mail non vérifié, policy refusée, header `X-Proxy-Secret` absent ou faux (uniquement si `PROXY_SECRET` est défini, ce qui n'est pas le cas en prod). |
+| 403 | E-mail non vérifié, policy refusée. |
 | 409 | Suppression d'un actif/plateforme encore utilisé. |
 | 422 | Validation (format Laravel standard `{message, errors}`), vente supérieure à la quantité détenue, alerte IA non comprise. |
 | 429 | Rate limit (en-têtes `Retry-After`, `X-RateLimit-*` exposés en CORS). |

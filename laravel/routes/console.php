@@ -23,8 +23,15 @@ Schedule::command('snapshots:record')->hourly();
 Schedule::command('digest:send daily')->dailyAt('08:00');
 Schedule::command('digest:send weekly')->weeklyOn(1, '08:00');
 
-// Queued mail/Discord notifications are processed by the permanent
-// `queue:work` systemd service (deploy/systemd/wallet-tracker-queue.service).
+// Queued mail/Discord notifications: the scheduler drains the queue once a
+// minute and exits, so a plain cron on schedule:run is enough (a permanent
+// worker from deploy/systemd/ can run beside it, both consume the same
+// queue). --max-time keeps a run inside its minute; jobs in their retry
+// backoff (10 s, 60 s) are picked up by a later run. withoutOverlapping: a
+// slow run (a digest hitting Gemini) never gets a second one started beside it.
+Schedule::command('queue:work --stop-when-empty --max-time=50')
+    ->everyMinute()
+    ->withoutOverlapping();
 
 // Failed notification jobs keep their serialized payload (recipient,
 // alert, portfolio figures): 7 days is enough to investigate a delivery

@@ -22,7 +22,7 @@ La clé est envoyée dans l'en-tête `x-goog-api-key`, jamais dans l'URL (une er
 ### Points d'attention
 
 - **Deux modèles distincts = deux quotas distincts** sur le plan gratuit : l'action ponctuelle d'un utilisateur ne peut pas épuiser le quota du digest, et inversement.
-- **IPv4 forcé** (`AppServiceProvider`) : sur l'ancien hébergeur alwaysdata, Google refusait l'IPv6 sortante (403 « User location is not supported »). Le réglage est conservé sur le VPS par précaution.
+- **IPv4 forcé** (`AppServiceProvider`) : Google peut refuser l'IPv6 sortante d'un serveur (403 « User location is not supported ») tout en acceptant son IPv4. Le réglage est conservé par précaution.
 - Quota gratuit partagé entre tous les utilisateurs : d'où le cache du digest et la limite de 10 analyses/min par utilisateur.
 
 ---

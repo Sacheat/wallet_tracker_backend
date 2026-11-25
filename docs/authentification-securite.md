@@ -80,16 +80,13 @@ Protection contre le mass assignment : `user_id`, `is_admin`, `created_by`, `log
 
 Les limiteurs nommés ont chacun leur compteur ; c'est pour cela qu'ils sont préférés aux limites inline (qui partagent un compteur par utilisateur). Les en-têtes `Retry-After`, `X-RateLimit-Limit` et `X-RateLimit-Remaining` sont exposés en CORS pour que la SPA puisse afficher un compte à rebours.
 
-## IP client et secret de proxy (`TrustVercelProxy`)
+## IP client et proxys de confiance
 
 En production, NGINX passe les requêtes **directement à PHP-FPM** : `REMOTE_ADDR` est la vraie IP du visiteur, donc `$request->ip()` et les limites par IP fonctionnent sans réglage.
 
-`TrustVercelProxy` vient de l'ancien hébergement (Vercel relayait les requêtes vers alwaysdata en ajoutant un en-tête secret) :
+`bootstrap/app.php` ne fait confiance qu'à un proxy local (`127.0.0.1`, `::1`), et seulement pour `X-Forwarded-For` et `X-Forwarded-Proto` : un `proxy_pass` NGINX sur la même machine transmettrait ainsi la vraie IP, tandis qu'un `X-Forwarded-For` envoyé par un client est ignoré. `X-Forwarded-Host` n'est jamais pris en compte.
 
-- `PROXY_SECRET` **vide (local, VPS actuel)** → aucun proxy de confiance, aucune requête refusée. Comportement standard de Laravel.
-- `PROXY_SECRET` défini → la requête doit porter `X-Proxy-Secret` (comparaison à temps constant), sinon **403** ; si oui, `X-Forwarded-For` et `X-Forwarded-Proto` sont considérés comme fiables.
-
-Si un reverse proxy HTTP est un jour ajouté devant l'API (Cloudflare, `proxy_pass`…), c'est ce mécanisme ou la configuration des proxys de confiance qu'il faudra utiliser. Sinon, tous les visiteurs auront l'IP du proxy et partageront le même compteur de limite.
+Si un reverse proxy distant est un jour ajouté devant l'API (Cloudflare…), il faudra ajouter ses adresses à cette liste. Sinon, tous les visiteurs auront l'IP du proxy et partageront le même compteur de limite.
 
 ## En-têtes et contenus
 

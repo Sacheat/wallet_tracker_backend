@@ -12,17 +12,12 @@ Navigateur ──► https://<domaine>
 
 Frontend et API sont servis par le **même NGINX, sur le même domaine**. Le navigateur ne voit qu'une origine : le cookie de session Sanctum est un cookie « first-party » et aucune configuration inter-site n'est nécessaire.
 
-Historique : l'app a d'abord tourné sur Vercel (front) + alwaysdata (API), avec une réécriture `vercel.json` et un secret de proxy pour rester même-site. Ce montage a été abandonné ; le code qui le gérait (`TrustVercelProxy`) reste en place mais ne fait rien tant que `PROXY_SECRET` est vide (voir plus bas).
-
 ### `.env` de production
 
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://<domaine>/backend
-
-# Vide : NGINX parle directement à PHP-FPM, il n'y a pas de proxy HTTP intermédiaire.
-PROXY_SECRET=
 
 DB_CONNECTION=mysql            # ou mariadb
 DB_HOST=127.0.0.1
@@ -63,8 +58,7 @@ Points importants :
 
 - **`APP_URL`** est l'URL publique de l'API, **préfixe `/backend` compris**. Les liens des e-mails (vérification, désinscription) sont signés sur un chemin relatif puis préfixés par `APP_URL`.
 - **`FRONTEND_URLS`** : la première entrée sert de base aux liens des e-mails qui pointent vers la SPA (`/?verified=1`, `/reset-password`, `/account`…).
-- **`PROXY_SECRET` doit rester vide** sur ce montage. S'il était défini, chaque requête sans en-tête `X-Proxy-Secret` serait refusée en 403, et NGINX ne l'envoie pas.
-- **Adresse IP client** : avec PHP-FPM en direct, `REMOTE_ADDR` est la vraie IP du visiteur. Les limites de requêtes par IP (`/login`, `/register`…) fonctionnent donc sans configuration. Si un jour un reverse proxy HTTP est placé devant (Cloudflare, `proxy_pass`…), il faudra configurer les proxys de confiance, sinon tous les visiteurs partageront la même IP et le même compteur.
+- **Adresse IP client** : avec PHP-FPM en direct, `REMOTE_ADDR` est la vraie IP du visiteur. Les limites de requêtes par IP (`/login`, `/register`…) fonctionnent donc sans configuration. Si un jour un reverse proxy HTTP est placé devant (Cloudflare, `proxy_pass`…), il faudra ajouter son adresse aux proxys de confiance (`bootstrap/app.php`, seul le loopback y est aujourd'hui), sinon tous les visiteurs partageront la même IP et le même compteur.
 - **Brevo** : le transport SMTP de Laravel suffit, aucun paquet supplémentaire. Le paquet `resend/resend-php` est encore installé ; il ne sert plus que si l'on repasse à `MAIL_MAILER=resend`.
 
 ### Étapes de déploiement
@@ -143,7 +137,7 @@ Le passage `queue:work` planifié chaque minute dans `routes/console.php` coexis
 
 ## Contraintes réseau
 
-- **IPv4 forcé** pour tout appel sortant (`AppServiceProvider`). Ce réglage date d'alwaysdata, dont l'IPv6 était refusée par Google (403 « User location is not supported »). Il ne gêne pas sur le VPS : tous les fournisseurs utilisés répondent en IPv4.
+- **IPv4 forcé** pour tout appel sortant (`AppServiceProvider`). Google peut refuser l'IPv6 sortante d'un serveur (403 « User location is not supported ») ; tous les fournisseurs utilisés répondent en IPv4.
 - Sans `COINGECKO_API_KEY`, CoinGecko applique le quota de l'IP publique du VPS ; s'il est partagé avec d'autres projets de l'école, des 429 sont possibles.
 
 ## Vérifications après déploiement

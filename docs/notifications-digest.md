@@ -27,7 +27,7 @@ Toutes implémentent `ShouldQueue` et utilisent le trait `QueuedWithRetries` :
 
 ## File d'attente
 
-Driver `database`. Le planificateur vide la file chaque minute (montage hérité d'alwaysdata, qui interdisait les processus permanents ; il suffit aussi sur le VPS) :
+Driver `database`. Le planificateur vide la file chaque minute, ce qui suffit avec un simple cron (un worker permanent systemd peut tourner en parallèle, voir [déploiement](deploiement.md)) :
 
 ```
 queue:work --stop-when-empty --max-time=50   (everyMinute, withoutOverlapping)
